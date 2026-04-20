@@ -9,9 +9,10 @@ import { RefloresteGanhe } from "@/components/refloreste-ganhe"
 import { MercadoIncentivos } from "@/components/mercado-incentivos"
 import { ChatScreen } from "@/components/chat-screen"
 import { PainelImpacto } from "@/components/painel-impacto"
+import { CadastroProdutoVenda } from "@/components/cadastro-produto-venda"
 
 type Screen = "welcome" | "auth" | "app"
-type Tab = "home" | "mudas" | "painel" | "mercado" | "chat"
+type Tab = "home" | "mudas" | "painel" | "vender" | "mercado" | "chat"
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("welcome")
@@ -62,6 +63,8 @@ export default function Home() {
         return <RefloresteGanhe />
       case "painel":
         return <PainelImpacto />
+      case "vender":
+        return <CadastroProdutoVenda />
       case "mercado":
         return <MercadoIncentivos />
       case "chat":

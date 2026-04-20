@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Home, Leaf, BarChart3, ShoppingBag, MessageCircle, Menu, X, User, LogOut } from "lucide-react"
+import { Home, Leaf, BarChart3, ShoppingBag, MessageCircle, Menu, X, User, LogOut, PackagePlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
@@ -25,6 +25,7 @@ const navItems = [
   { id: "home", label: "Lar", icon: Home },
   { id: "mudas", label: "Minhas Mudas", icon: Leaf },
   { id: "painel", label: "Painel de Impacto", icon: BarChart3 },
+  { id: "vender", label: "Vender", icon: PackagePlus },
   { id: "mercado", label: "Mercado", icon: ShoppingBag },
   { id: "chat", label: "Bater Papo", icon: MessageCircle },
 ]
