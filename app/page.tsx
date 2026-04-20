@@ -10,6 +10,7 @@ import { MercadoIncentivos } from "@/components/mercado-incentivos"
 import { ChatScreen } from "@/components/chat-screen"
 import { PainelImpacto } from "@/components/painel-impacto"
 import { CadastroProdutoVenda } from "@/components/cadastro-produto-venda"
+import { MarketplaceProvider } from "@/contexts/marketplace-context"
 
 type Screen = "welcome" | "auth" | "app"
 type Tab = "home" | "mudas" | "painel" | "vender" | "mercado" | "chat"
@@ -21,7 +22,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Verifica se o usuário já está logado (simulação)
+    // Verifica se o usuario ja esta logado (simulacao)
     const savedUser = localStorage.getItem("ags_user")
     if (savedUser) {
       setUserName(savedUser)
@@ -35,7 +36,7 @@ export default function Home() {
   }
 
   const handleLogin = (email: string, password: string) => {
-    // Simulação de login
+    // Simulacao de login
     const name = email.split("@")[0]
     setUserName(name.charAt(0).toUpperCase() + name.slice(1))
     localStorage.setItem("ags_user", name.charAt(0).toUpperCase() + name.slice(1))
@@ -43,7 +44,7 @@ export default function Home() {
   }
 
   const handleSignUp = (name: string, email: string, password: string) => {
-    // Simulação de cadastro
+    // Simulacao de cadastro
     setUserName(name)
     localStorage.setItem("ags_user", name)
     setScreen("app")
@@ -55,6 +56,14 @@ export default function Home() {
     setCurrentTab("home")
   }
 
+  const handleNavigateToChat = () => {
+    setCurrentTab("chat")
+  }
+
+  const handleNavigateToVender = () => {
+    setCurrentTab("vender")
+  }
+
   const renderContent = () => {
     switch (currentTab) {
       case "home":
@@ -64,9 +73,9 @@ export default function Home() {
       case "painel":
         return <PainelImpacto />
       case "vender":
-        return <CadastroProdutoVenda />
+        return <CadastroProdutoVenda onNavigateToMercado={() => setCurrentTab("mercado")} />
       case "mercado":
-        return <MercadoIncentivos />
+        return <MercadoIncentivos onNavigateToChat={handleNavigateToChat} />
       case "chat":
         return <ChatScreen />
       default:
@@ -94,16 +103,18 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar
-        currentTab={currentTab}
-        onTabChange={(tab) => setCurrentTab(tab as Tab)}
-        userName={userName}
-        onLogout={handleLogout}
-      />
-      <main className="container mx-auto px-4 py-6">
-        {renderContent()}
-      </main>
-    </div>
+    <MarketplaceProvider>
+      <div className="min-h-screen bg-background">
+        <Navbar
+          currentTab={currentTab}
+          onTabChange={(tab) => setCurrentTab(tab as Tab)}
+          userName={userName}
+          onLogout={handleLogout}
+        />
+        <main className="container mx-auto px-4 py-6">
+          {renderContent()}
+        </main>
+      </div>
+    </MarketplaceProvider>
   )
 }

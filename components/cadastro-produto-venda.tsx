@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
+import { useMarketplace } from "@/contexts/marketplace-context"
 
 // Tipos para plantações validadas
 interface PlantacaoValidada {
@@ -102,7 +103,12 @@ const plantacoesValidadas: PlantacaoValidada[] = [
   },
 ]
 
-export function CadastroProdutoVenda() {
+interface CadastroProdutoVendaProps {
+  onNavigateToMercado?: () => void
+}
+
+export function CadastroProdutoVenda({ onNavigateToMercado }: CadastroProdutoVendaProps) {
+  const { adicionarProduto } = useMarketplace()
   const [plantacaoSelecionada, setPlantacaoSelecionada] = useState<PlantacaoValidada | null>(null)
   const [nomeProduto, setNomeProduto] = useState("")
   const [descricao, setDescricao] = useState("")
@@ -152,8 +158,27 @@ export function CadastroProdutoVenda() {
     }
 
     setIsPublishing(true)
-    // Simula processo de publicação
+    // Simula processo de publicacao
     await new Promise((resolve) => setTimeout(resolve, 2500))
+
+    // Adiciona o produto ao contexto do marketplace
+    adicionarProduto({
+      nome: nomeProduto,
+      descricao: descricao || `${plantacaoAtual.tipo === "fruto" ? "Fruto" : "Muda"} de ${plantacaoAtual.especie} com origem verificada em blockchain.`,
+      especie: plantacaoAtual.especie,
+      tipo: plantacaoAtual.tipo,
+      quantidade: Number(quantidade),
+      unidade: plantacaoAtual.unidade,
+      precoReais: Number(precoReais),
+      precoPontos: precoPontos ? Number(precoPontos) : undefined,
+      fotos: fotos,
+      vendedorId: "user-current",
+      vendedorNome: "Voce",
+      vendedorAvatar: "EU",
+      plantacaoOrigem: plantacaoAtual.nome,
+      hashBlockchain: plantacaoAtual.hashBlockchain,
+    })
+
     setIsPublishing(false)
     setPublishSuccess(true)
   }
@@ -629,9 +654,19 @@ export function CadastroProdutoVenda() {
                   </code>
                 </div>
               </div>
-              <Button className="mt-6" onClick={resetForm}>
-                Cadastrar Novo Produto
-              </Button>
+              <div className="flex gap-3 mt-6">
+                <Button variant="outline" onClick={resetForm}>
+                  Cadastrar Novo Produto
+                </Button>
+                {onNavigateToMercado && (
+                  <Button onClick={() => {
+                    resetForm()
+                    onNavigateToMercado()
+                  }}>
+                    Ver no Mercado
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
             <>
