@@ -83,7 +83,7 @@ function Mercado() {
       </header>
 
       <Tabs defaultValue="sale">
-        <TabsList>
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger value="sale"><Store className="mr-2 h-4 w-4" />Produtos à venda</TabsTrigger>
           <TabsTrigger value="incentive"><Gift className="mr-2 h-4 w-4" />Incentivos</TabsTrigger>
           <TabsTrigger value="mine"><PackagePlus className="mr-2 h-4 w-4" />Área de venda</TabsTrigger>

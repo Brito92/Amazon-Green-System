@@ -250,7 +250,8 @@ function Refloreste() {
       </header>
 
       <Tabs defaultValue="muda">
-        <TabsList>
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 p-1">
+
           <TabsTrigger value="muda">
             <Sprout className="mr-2 h-4 w-4" />
             Nova muda
