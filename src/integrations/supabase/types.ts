@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -11,6 +11,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -48,51 +73,147 @@ export type Database = {
       }
       consortia: {
         Row: {
-          area_hectares: number
+          area_hectares: number | null
           bonus_points: number
           created_at: string
           description: string | null
           id: string
+          measurement_mode: string
           name: string
           photo_url: string | null
           points: number
           species_list: string[]
           status: Database["public"]["Enums"]["record_status"]
+          total_seedlings: number
           updated_at: string
           user_id: string
           verification_method: Database["public"]["Enums"]["verification_method"]
         }
         Insert: {
-          area_hectares?: number
+          area_hectares?: number | null
           bonus_points?: number
           created_at?: string
           description?: string | null
           id?: string
+          measurement_mode?: string
           name: string
           photo_url?: string | null
           points?: number
           species_list?: string[]
           status?: Database["public"]["Enums"]["record_status"]
+          total_seedlings?: number
           updated_at?: string
           user_id: string
           verification_method?: Database["public"]["Enums"]["verification_method"]
         }
         Update: {
-          area_hectares?: number
+          area_hectares?: number | null
           bonus_points?: number
           created_at?: string
           description?: string | null
           id?: string
+          measurement_mode?: string
           name?: string
           photo_url?: string | null
           points?: number
           species_list?: string[]
           status?: Database["public"]["Enums"]["record_status"]
+          total_seedlings?: number
           updated_at?: string
           user_id?: string
           verification_method?: Database["public"]["Enums"]["verification_method"]
         }
         Relationships: []
+      }
+      consortium_items: {
+        Row: {
+          consortium_id: string
+          created_at: string
+          custom_species_name: string | null
+          id: string
+          notes: string | null
+          quantity: number
+          species_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          consortium_id: string
+          created_at?: string
+          custom_species_name?: string | null
+          id?: string
+          notes?: string | null
+          quantity: number
+          species_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consortium_id?: string
+          created_at?: string
+          custom_species_name?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          species_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consortium_items_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consortium_items_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_co2_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "consortium_items_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_dashboard"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "consortium_items_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "consortium_items_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_balance"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "consortium_items_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_reference_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "consortium_items_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consortium_items_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species_with_co2"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       conversations: {
         Row: {
@@ -317,10 +438,52 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plantings_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_co2_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "plantings_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_dashboard"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "plantings_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "plantings_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_balance"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "plantings_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_reference_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
             foreignKeyName: "plantings_species_id_fkey"
             columns: ["species_id"]
             isOneToOne: false
             referencedRelation: "species"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plantings_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species_with_co2"
             referencedColumns: ["id"]
           },
         ]
@@ -446,6 +609,41 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "products_source_consortium_id_fkey"
+            columns: ["source_consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_co2_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "products_source_consortium_id_fkey"
+            columns: ["source_consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_dashboard"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "products_source_consortium_id_fkey"
+            columns: ["source_consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "products_source_consortium_id_fkey"
+            columns: ["source_consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_balance"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "products_source_consortium_id_fkey"
+            columns: ["source_consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_reference_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
             foreignKeyName: "products_source_planting_id_fkey"
             columns: ["source_planting_id"]
             isOneToOne: false
@@ -457,6 +655,13 @@ export type Database = {
             columns: ["species_id"]
             isOneToOne: false
             referencedRelation: "species"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species_with_co2"
             referencedColumns: ["id"]
           },
         ]
@@ -509,6 +714,9 @@ export type Database = {
       species: {
         Row: {
           base_points: number
+          co2_category_id: string | null
+          co2_factor_kg_per_seedling_year: number | null
+          co2_factor_source: string | null
           common_name: string
           created_at: string
           created_by: string | null
@@ -517,9 +725,13 @@ export type Database = {
           scientific_name: string | null
           slug: string | null
           updated_at: string
+          water_reference_liters_per_seedling_month: number | null
         }
         Insert: {
           base_points?: number
+          co2_category_id?: string | null
+          co2_factor_kg_per_seedling_year?: number | null
+          co2_factor_source?: string | null
           common_name: string
           created_at?: string
           created_by?: string | null
@@ -528,9 +740,13 @@ export type Database = {
           scientific_name?: string | null
           slug?: string | null
           updated_at?: string
+          water_reference_liters_per_seedling_month?: number | null
         }
         Update: {
           base_points?: number
+          co2_category_id?: string | null
+          co2_factor_kg_per_seedling_year?: number | null
+          co2_factor_source?: string | null
           common_name?: string
           created_at?: string
           created_by?: string | null
@@ -539,6 +755,72 @@ export type Database = {
           scientific_name?: string | null
           slug?: string | null
           updated_at?: string
+          water_reference_liters_per_seedling_month?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "species_co2_category_id_fkey"
+            columns: ["co2_category_id"]
+            isOneToOne: false
+            referencedRelation: "species_co2_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      species_co2_categories: {
+        Row: {
+          approximate_height: string | null
+          co2_avg_kg_year: number
+          co2_max_kg_year: number
+          co2_min_kg_year: number
+          created_at: string
+          description: string | null
+          dominant_structure: string | null
+          id: string
+          is_user_selectable: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+          water_avg_liters_month: number
+          water_max_liters_month: number
+          water_min_liters_month: number
+        }
+        Insert: {
+          approximate_height?: string | null
+          co2_avg_kg_year?: number
+          co2_max_kg_year?: number
+          co2_min_kg_year?: number
+          created_at?: string
+          description?: string | null
+          dominant_structure?: string | null
+          id?: string
+          is_user_selectable?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          water_avg_liters_month?: number
+          water_max_liters_month?: number
+          water_min_liters_month?: number
+        }
+        Update: {
+          approximate_height?: string | null
+          co2_avg_kg_year?: number
+          co2_max_kg_year?: number
+          co2_min_kg_year?: number
+          created_at?: string
+          description?: string | null
+          dominant_structure?: string | null
+          id?: string
+          is_user_selectable?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          water_avg_liters_month?: number
+          water_max_liters_month?: number
+          water_min_liters_month?: number
         }
         Relationships: []
       }
@@ -578,9 +860,285 @@ export type Database = {
         }
         Relationships: []
       }
+      water_logs: {
+        Row: {
+          consortium_id: string | null
+          created_at: string
+          id: string
+          irrigation_method: string | null
+          notes: string | null
+          planting_id: string | null
+          recorded_at: string
+          source_type: string | null
+          user_id: string
+          water_liters: number
+        }
+        Insert: {
+          consortium_id?: string | null
+          created_at?: string
+          id?: string
+          irrigation_method?: string | null
+          notes?: string | null
+          planting_id?: string | null
+          recorded_at?: string
+          source_type?: string | null
+          user_id: string
+          water_liters: number
+        }
+        Update: {
+          consortium_id?: string | null
+          created_at?: string
+          id?: string
+          irrigation_method?: string | null
+          notes?: string | null
+          planting_id?: string | null
+          recorded_at?: string
+          source_type?: string | null
+          user_id?: string
+          water_liters?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_co2_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_dashboard"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_balance"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_reference_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_planting_id_fkey"
+            columns: ["planting_id"]
+            isOneToOne: false
+            referencedRelation: "plantings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      consortia_co2_summary: {
+        Row: {
+          consortium_id: string | null
+          estimated_co2_avg_kg_year: number | null
+          estimated_co2_max_kg_year: number | null
+          estimated_co2_min_kg_year: number | null
+          name: string | null
+          status: Database["public"]["Enums"]["record_status"] | null
+          total_seedlings: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      consortia_environment_dashboard: {
+        Row: {
+          consortium_id: string | null
+          estimated_co2_avg_kg_year: number | null
+          estimated_co2_max_kg_year: number | null
+          estimated_co2_min_kg_year: number | null
+          estimated_water_avg_liters_month: number | null
+          estimated_water_max_liters_month: number | null
+          estimated_water_min_liters_month: number | null
+          name: string | null
+          status: Database["public"]["Enums"]["record_status"] | null
+          total_seedlings: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      consortia_environment_summary: {
+        Row: {
+          consortium_id: string | null
+          estimated_co2_kg_year: number | null
+          name: string | null
+          total_seedlings: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      consortia_water_balance: {
+        Row: {
+          actual_water_liters_month: number | null
+          consortium_id: string | null
+          estimated_water_avg_liters_month: number | null
+          estimated_water_excess_liters_month: number | null
+          estimated_water_max_liters_month: number | null
+          estimated_water_min_liters_month: number | null
+          estimated_water_savings_liters_month: number | null
+          name: string | null
+          reference_month: string | null
+          total_seedlings: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      consortia_water_reference_summary: {
+        Row: {
+          consortium_id: string | null
+          estimated_water_avg_liters_month: number | null
+          estimated_water_max_liters_month: number | null
+          estimated_water_min_liters_month: number | null
+          name: string | null
+          total_seedlings: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      consortia_water_usage_monthly: {
+        Row: {
+          actual_water_liters_month: number | null
+          consortium_id: string | null
+          reference_month: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_co2_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_dashboard"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_balance"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_reference_summary"
+            referencedColumns: ["consortium_id"]
+          },
+        ]
+      }
+      species_with_co2: {
+        Row: {
+          base_points: number | null
+          co2_avg_kg_year: number | null
+          co2_category_description: string | null
+          co2_category_height: string | null
+          co2_category_id: string | null
+          co2_category_name: string | null
+          co2_category_slug: string | null
+          co2_category_structure: string | null
+          co2_max_kg_year: number | null
+          co2_min_kg_year: number | null
+          common_name: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          is_custom: boolean | null
+          scientific_name: string | null
+          slug: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "species_co2_category_id_fkey"
+            columns: ["co2_category_id"]
+            isOneToOne: false
+            referencedRelation: "species_co2_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_co2_summary: {
+        Row: {
+          estimated_co2_avg_kg_year: number | null
+          estimated_co2_max_kg_year: number | null
+          estimated_co2_min_kg_year: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      user_environment_dashboard: {
+        Row: {
+          actual_water_liters_month: number | null
+          estimated_co2_avg_kg_year: number | null
+          estimated_co2_max_kg_year: number | null
+          estimated_co2_min_kg_year: number | null
+          estimated_water_avg_liters_month: number | null
+          estimated_water_excess_liters_month: number | null
+          estimated_water_max_liters_month: number | null
+          estimated_water_min_liters_month: number | null
+          estimated_water_savings_liters_month: number | null
+          reference_month: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      user_water_balance: {
+        Row: {
+          actual_water_liters_month: number | null
+          estimated_water_avg_liters_month: number | null
+          estimated_water_excess_liters_month: number | null
+          estimated_water_max_liters_month: number | null
+          estimated_water_min_liters_month: number | null
+          estimated_water_savings_liters_month: number | null
+          reference_month: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_conversation_participant: {
@@ -590,6 +1148,14 @@ export type Database = {
       is_negotiation_participant: {
         Args: { _neg: string; _user: string }
         Returns: boolean
+      }
+      recalculate_consortium_points: {
+        Args: { _consortium_id: string }
+        Returns: undefined
+      }
+      recalculate_consortium_total_seedlings: {
+        Args: { _consortium_id: string }
+        Returns: undefined
       }
       recalculate_points: { Args: { _user: string }; Returns: undefined }
     }
@@ -733,6 +1299,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       negotiation_status: ["open", "in_progress", "closed", "cancelled"],
