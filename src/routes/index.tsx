@@ -88,7 +88,7 @@ function PresentationLanding() {
 
             <div className="hidden items-center gap-3 md:flex">
               <a
-                href="/apk/amazon-green-system.apk"
+                href="/apk/app-debug.apk"
                 download
                 className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/85 px-4 py-2 text-sm font-medium text-foreground shadow-soft transition hover:-translate-y-0.5 hover:border-primary/30"
               >
