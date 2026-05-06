@@ -1,4 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Capacitor } from "@capacitor/core";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ArrowRight,
   Download,
@@ -11,8 +15,39 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
-  component: PresentationLanding,
+  component: IndexEntry,
 });
+
+const isNativeApp = Capacitor.isNativePlatform();
+
+function IndexEntry() {
+  const isNativeApp = Capacitor.isNativePlatform();
+
+  if (isNativeApp) {
+    return (
+      <NativeIndexRedirect />
+    );
+  }
+
+  return <PresentationLanding />;
+
+}
+
+function NativeIndexRedirect() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) return;
+    router.navigate({ to: user ? "/dashboard" : "/login" });
+  }, [loading, user, router]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-soft">
+      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    </div>
+  );
+}
 
 const impactCards = [
   {
