@@ -125,7 +125,7 @@ function PresentationLanding() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
-                  href="/apk/amazon-green-system.apk"
+                  href="/apk/app-debug.apk"
                   download
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-white/90 px-6 py-3 text-sm font-semibold text-foreground shadow-soft transition hover:-translate-y-0.5 hover:border-primary/35"
                 >
@@ -137,7 +137,7 @@ function PresentationLanding() {
               <p className="mt-3 text-sm text-muted-foreground">
                 Para ativar o download, coloque o arquivo final em{" "}
                 <span className="rounded bg-primary/8 px-2 py-1 font-mono text-xs text-primary">
-                  /public/apk/amazon-green-system.apk
+                  /public/apk/app-debug.apk
                 </span>
                 .
               </p>
