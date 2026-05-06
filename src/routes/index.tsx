@@ -18,8 +18,6 @@ export const Route = createFileRoute("/")({
   component: IndexEntry,
 });
 
-const isNativeApp = Capacitor.isNativePlatform();
-
 function IndexEntry() {
   const isNativeApp = Capacitor.isNativePlatform();
 
@@ -38,7 +36,7 @@ function NativeIndexRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) return;
+    if (loading) return;
     router.navigate({ to: user ? "/dashboard" : "/login" });
   }, [loading, user, router]);
 
@@ -123,7 +121,7 @@ function PresentationLanding() {
 
             <div className="hidden items-center gap-3 md:flex">
               <a
-                href="/apk/app-debug.apk"
+                href="/apk/amazon-green-system.apk"
                 download
                 className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/85 px-4 py-2 text-sm font-medium text-foreground shadow-soft transition hover:-translate-y-0.5 hover:border-primary/30"
               >
@@ -160,7 +158,7 @@ function PresentationLanding() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
-                  href="/apk/app-debug.apk"
+                  href="/apk/amazon-green-system.apk"
                   download
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-white/90 px-6 py-3 text-sm font-semibold text-foreground shadow-soft transition hover:-translate-y-0.5 hover:border-primary/35"
                 >
@@ -172,7 +170,7 @@ function PresentationLanding() {
               <p className="mt-3 text-sm text-muted-foreground">
                 Para ativar o download, coloque o arquivo final em{" "}
                 <span className="rounded bg-primary/8 px-2 py-1 font-mono text-xs text-primary">
-                  /public/apk/app-debug.apk
+                  /public/apk/amazon-green-system.apk
                 </span>
                 .
               </p>
