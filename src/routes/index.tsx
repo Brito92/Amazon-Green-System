@@ -121,7 +121,7 @@ function PresentationLanding() {
 
             <div className="hidden items-center gap-3 md:flex">
               <a
-                href="/apk/amazon-green-system.apk"
+                href="/apk/app-debug.apk"
                 download
                 className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/85 px-4 py-2 text-sm font-medium text-foreground shadow-soft transition hover:-translate-y-0.5 hover:border-primary/30"
               >
@@ -158,7 +158,7 @@ function PresentationLanding() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
-                  href="/apk/amazon-green-system.apk"
+                  href="/apk/app-debug.apk"
                   download
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-white/90 px-6 py-3 text-sm font-semibold text-foreground shadow-soft transition hover:-translate-y-0.5 hover:border-primary/35"
                 >
@@ -170,7 +170,7 @@ function PresentationLanding() {
               <p className="mt-3 text-sm text-muted-foreground">
                 Para ativar o download, coloque o arquivo final em{" "}
                 <span className="rounded bg-primary/8 px-2 py-1 font-mono text-xs text-primary">
-                  /public/apk/amazon-green-system.apk
+                  /public/apk/app-debug.apk
                 </span>
                 .
               </p>
@@ -277,15 +277,10 @@ function PresentationLanding() {
                 Aplicativo Android
               </p>
               <h2 className="mt-3 text-3xl font-semibold">Leve o sistema para campo com o APK do projeto</h2>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-primary-foreground/85">
-                Esta apresentação fica separada do restante do sistema. O aplicativo continua funcionando nas rotas
-                internas, enquanto esta tela serve como portal de entrada, apresentação institucional e ponto de
-                download do APK.
-              </p>
             </div>
             <div className="flex flex-col gap-3 lg:items-end">
               <a
-                href="/apk/amazon-green-system.apk"
+                href="/apk/app-debug.apk"
                 download
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-primary transition hover:-translate-y-0.5"
               >
