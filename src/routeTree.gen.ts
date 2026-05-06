@@ -11,9 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ValidacaoRouteImport } from './routes/validacao'
 import { Route as RefloresteRouteImport } from './routes/refloreste'
+import { Route as ProdutoresRouteImport } from './routes/produtores'
+import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as MercadoRouteImport } from './routes/mercado'
+import { Route as MapaRouteImport } from './routes/mapa'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CreditosRouteImport } from './routes/creditos'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as IndexRouteImport } from './routes/index'
@@ -28,9 +32,24 @@ const RefloresteRoute = RefloresteRouteImport.update({
   path: '/refloreste',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProdutoresRoute = ProdutoresRouteImport.update({
+  id: '/produtores',
+  path: '/produtores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MercadoRoute = MercadoRouteImport.update({
   id: '/mercado',
   path: '/mercado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapaRoute = MapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -41,6 +60,11 @@ const LoginRoute = LoginRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreditosRoute = CreditosRouteImport.update({
+  id: '/creditos',
+  path: '/creditos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -63,9 +87,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/carrinho': typeof CarrinhoRoute
   '/chat': typeof ChatRoute
+  '/creditos': typeof CreditosRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/mapa': typeof MapaRoute
   '/mercado': typeof MercadoRoute
+  '/perfil': typeof PerfilRoute
+  '/produtores': typeof ProdutoresRoute
   '/refloreste': typeof RefloresteRoute
   '/validacao': typeof ValidacaoRoute
 }
@@ -73,9 +101,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/carrinho': typeof CarrinhoRoute
   '/chat': typeof ChatRoute
+  '/creditos': typeof CreditosRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/mapa': typeof MapaRoute
   '/mercado': typeof MercadoRoute
+  '/perfil': typeof PerfilRoute
+  '/produtores': typeof ProdutoresRoute
   '/refloreste': typeof RefloresteRoute
   '/validacao': typeof ValidacaoRoute
 }
@@ -84,9 +116,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/carrinho': typeof CarrinhoRoute
   '/chat': typeof ChatRoute
+  '/creditos': typeof CreditosRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/mapa': typeof MapaRoute
   '/mercado': typeof MercadoRoute
+  '/perfil': typeof PerfilRoute
+  '/produtores': typeof ProdutoresRoute
   '/refloreste': typeof RefloresteRoute
   '/validacao': typeof ValidacaoRoute
 }
@@ -96,9 +132,13 @@ export interface FileRouteTypes {
     | '/'
     | '/carrinho'
     | '/chat'
+    | '/creditos'
     | '/dashboard'
     | '/login'
+    | '/mapa'
     | '/mercado'
+    | '/perfil'
+    | '/produtores'
     | '/refloreste'
     | '/validacao'
   fileRoutesByTo: FileRoutesByTo
@@ -106,9 +146,13 @@ export interface FileRouteTypes {
     | '/'
     | '/carrinho'
     | '/chat'
+    | '/creditos'
     | '/dashboard'
     | '/login'
+    | '/mapa'
     | '/mercado'
+    | '/perfil'
+    | '/produtores'
     | '/refloreste'
     | '/validacao'
   id:
@@ -116,9 +160,13 @@ export interface FileRouteTypes {
     | '/'
     | '/carrinho'
     | '/chat'
+    | '/creditos'
     | '/dashboard'
     | '/login'
+    | '/mapa'
     | '/mercado'
+    | '/perfil'
+    | '/produtores'
     | '/refloreste'
     | '/validacao'
   fileRoutesById: FileRoutesById
@@ -127,9 +175,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CarrinhoRoute: typeof CarrinhoRoute
   ChatRoute: typeof ChatRoute
+  CreditosRoute: typeof CreditosRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  MapaRoute: typeof MapaRoute
   MercadoRoute: typeof MercadoRoute
+  PerfilRoute: typeof PerfilRoute
+  ProdutoresRoute: typeof ProdutoresRoute
   RefloresteRoute: typeof RefloresteRoute
   ValidacaoRoute: typeof ValidacaoRoute
 }
@@ -150,11 +202,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RefloresteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/produtores': {
+      id: '/produtores'
+      path: '/produtores'
+      fullPath: '/produtores'
+      preLoaderRoute: typeof ProdutoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mercado': {
       id: '/mercado'
       path: '/mercado'
       fullPath: '/mercado'
       preLoaderRoute: typeof MercadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mapa': {
+      id: '/mapa'
+      path: '/mapa'
+      fullPath: '/mapa'
+      preLoaderRoute: typeof MapaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -169,6 +242,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creditos': {
+      id: '/creditos'
+      path: '/creditos'
+      fullPath: '/creditos'
+      preLoaderRoute: typeof CreditosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -199,9 +279,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CarrinhoRoute: CarrinhoRoute,
   ChatRoute: ChatRoute,
+  CreditosRoute: CreditosRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  MapaRoute: MapaRoute,
   MercadoRoute: MercadoRoute,
+  PerfilRoute: PerfilRoute,
+  ProdutoresRoute: ProdutoresRoute,
   RefloresteRoute: RefloresteRoute,
   ValidacaoRoute: ValidacaoRoute,
 }

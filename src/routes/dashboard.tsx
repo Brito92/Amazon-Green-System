@@ -3,14 +3,23 @@ import { useEffect, useState } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { greet, ptDate } from "@/lib/format";
-import { ArrowRight, Coins, Droplets, Leaf, ShoppingBag, Sprout, TreePine, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { brl, greet, ptDate } from "@/lib/format";
+import {
+  ArrowRight,
+  Coins,
+  Droplets,
+  Leaf,
+  ShoppingBag,
+  Sprout,
+  TreePine,
+  Trophy,
+} from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   component: () => (
@@ -23,11 +32,25 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 type EnvironmentSummary = Database["public"]["Views"]["user_environment_dashboard"]["Row"];
-type Recent = { id: string; type: "muda" | "consórcio"; label: string; status: string; created_at: string };
+type CarbonSummary = Database["public"]["Views"]["user_carbon_credit_summary"]["Row"];
+type Recent = {
+  id: string;
+  type: "muda" | "consorcio";
+  label: string;
+  status: string;
+  created_at: string;
+};
 type Rank = { user_id: string; display_name: string; total: number };
 
 function formatNumber(value: number | null | undefined, digits = 0) {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: digits }).format(value ?? 0);
+}
+
+function formatTco2(value: number | null | undefined) {
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  }).format(value ?? 0);
 }
 
 function Dashboard() {
@@ -37,8 +60,8 @@ function Dashboard() {
   const [consortiaCount, setConsortiaCount] = useState(0);
   const [plantingsCount, setPlantingsCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
-  const [totalSeedlings, setTotalSeedlings] = useState(0);
   const [environment, setEnvironment] = useState<EnvironmentSummary | null>(null);
+  const [carbonSummary, setCarbonSummary] = useState<CarbonSummary | null>(null);
   const [recent, setRecent] = useState<Recent[]>([]);
   const [ranking, setRanking] = useState<Rank[]>([]);
 
@@ -46,9 +69,10 @@ function Dashboard() {
     if (!user) return;
 
     (async () => {
-      // Get current month boundaries
       const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .slice(0, 10);
 
       const [
         profileRes,
@@ -56,10 +80,10 @@ function Dashboard() {
         plantingsRes,
         cartRes,
         envRes,
+        carbonRes,
         recentPlantingsRes,
         recentConsortiaRes,
-        rankingBaseRes,
-        rankingPlantingsRes,
+        rankingRes,
       ] = await Promise.all([
         supabase.from("profiles").select("display_name, points").eq("user_id", user.id).maybeSingle(),
         supabase.from("consortia").select("id", { count: "exact", head: true }).eq("user_id", user.id),
@@ -73,6 +97,11 @@ function Dashboard() {
           .limit(1)
           .maybeSingle(),
         supabase
+          .from("user_carbon_credit_summary")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
           .from("plantings")
           .select("id, status, created_at, species:species_id(common_name)")
           .eq("user_id", user.id)
@@ -84,8 +113,6 @@ function Dashboard() {
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(4),
-        supabase.from("consortia_environment_dashboard").select("user_id, total_seedlings"),
-        // New query for ranking: validated plantings from current month
         supabase
           .from("plantings")
           .select("user_id")
@@ -99,11 +126,7 @@ function Dashboard() {
       setPlantingsCount(plantingsRes.count ?? 0);
       setCartCount(cartRes.count ?? 0);
       setEnvironment(envRes.data ?? null);
-
-      const totalFromUser = (rankingBaseRes.data ?? [])
-        .filter((row) => row.user_id === user.id)
-        .reduce((sum, row) => sum + (row.total_seedlings ?? 0), 0);
-      setTotalSeedlings(totalFromUser);
+      setCarbonSummary(carbonRes.data ?? null);
 
       const recentItems: Recent[] = [
         ...((recentPlantingsRes.data ?? []).map((item) => ({
@@ -115,7 +138,7 @@ function Dashboard() {
         })) ?? []),
         ...((recentConsortiaRes.data ?? []).map((item) => ({
           id: item.id,
-          type: "consórcio" as const,
+          type: "consorcio" as const,
           label: item.name,
           status: item.status,
           created_at: item.created_at,
@@ -125,23 +148,25 @@ function Dashboard() {
         .slice(0, 6);
       setRecent(recentItems);
 
-      // New ranking logic: group by user_id and count plantings
-      const plantingsByUser = new Map<string, number>();
-      for (const row of rankingPlantingsRes.data ?? []) {
-        const userId = row.user_id;
-        if (!userId) continue;
-        const total = plantingsByUser.get(userId) ?? 0;
-        plantingsByUser.set(userId, total + 1);
+      const rankingMap = new Map<string, number>();
+      for (const row of rankingRes.data ?? []) {
+        if (!row.user_id) continue;
+        rankingMap.set(row.user_id, (rankingMap.get(row.user_id) ?? 0) + 1);
       }
 
-      const top = [...plantingsByUser.entries()]
-        .sort((a, b) => b[1] - a[1])
+      const top = [...rankingMap.entries()]
+        .sort((left, right) => right[1] - left[1])
         .slice(0, 5);
 
       if (top.length) {
         const ids = top.map(([id]) => id);
-        const profilesRes = await supabase.from("profiles").select("user_id, display_name").in("user_id", ids);
-        const nameMap = new Map((profilesRes.data ?? []).map((profile) => [profile.user_id, profile.display_name]));
+        const profilesRes = await supabase
+          .from("profiles")
+          .select("user_id, display_name")
+          .in("user_id", ids);
+        const nameMap = new Map(
+          (profilesRes.data ?? []).map((profile) => [profile.user_id, profile.display_name]),
+        );
         setRanking(
           top.map(([id, total]) => ({
             user_id: id,
@@ -159,6 +184,7 @@ function Dashboard() {
     {
       label: "Mudas no sistema",
       value: formatNumber(plantingsCount),
+      hint: "Registros simples cadastrados",
       icon: Sprout,
     },
     {
@@ -180,6 +206,18 @@ function Dashboard() {
       icon: Droplets,
     },
     {
+      label: "Créditos emitidos",
+      value: formatNumber(carbonSummary?.total_credits),
+      hint: `${formatTco2(carbonSummary?.total_tco2)} tCO2 simuladas`,
+      icon: Coins,
+    },
+    {
+      label: "Receita simulada",
+      value: brl(carbonSummary?.revenue_brl ?? 0),
+      hint: `${formatNumber(carbonSummary?.sold_credits)} créditos vendidos`,
+      icon: ShoppingBag,
+    },
+    {
       label: "Pontos confirmados",
       value: formatNumber(points),
       hint: "Pontuação verificada",
@@ -198,12 +236,17 @@ function Dashboard() {
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{greet()},</p>
-          <h1 className="font-display text-3xl font-semibold text-balance">{name || "Produtor(a)"}</h1>
+          <h1 className="font-display text-3xl font-semibold text-balance">
+            {name || "Produtor(a)"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Veja seus consórcios, carbono estimado e uso de água.
+            Veja seus consórcios, carbono estimado, créditos e uso de água.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <Button asChild variant="outline">
+            <Link to="/creditos">Ver créditos</Link>
+          </Button>
           <Button asChild className="bg-gradient-forest">
             <Link to="/refloreste">
               Refloreste e ganhe pontos
@@ -213,7 +256,7 @@ function Dashboard() {
         </div>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map(({ hint, icon: Icon, label, value }) => (
           <Card key={label} className="shadow-card border-border/60">
             <CardContent className="flex items-center gap-4 p-5">
@@ -231,7 +274,7 @@ function Dashboard() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 shadow-card border-border/60">
+        <Card className="shadow-card border-border/60 lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-display">Registros recentes</CardTitle>
             <Button asChild variant="ghost" size="sm">
@@ -253,11 +296,14 @@ function Dashboard() {
             ) : (
               <ul className="divide-y divide-border/60">
                 {recent.map((item) => (
-                  <li key={`${item.type}-${item.id}`} className="flex items-center justify-between py-3">
+                  <li
+                    key={`${item.type}-${item.id}`}
+                    className="flex items-center justify-between py-3"
+                  >
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{item.label}</div>
                       <div className="text-xs text-muted-foreground">
-                        {item.type} · {ptDate(item.created_at)}
+                        {item.type} - {ptDate(item.created_at)}
                       </div>
                     </div>
                     <StatusBadge status={item.status} />
@@ -293,8 +339,12 @@ function Dashboard() {
                     >
                       {index + 1}
                     </span>
-                    <div className="min-w-0 flex-1 truncate text-sm font-medium">{item.display_name}</div>
-                    <span className="text-xs text-muted-foreground">{formatNumber(item.total)} mudas</span>
+                    <div className="min-w-0 flex-1 truncate text-sm font-medium">
+                      {item.display_name}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatNumber(item.total)} mudas
+                    </span>
                   </li>
                 ))}
               </ol>
@@ -302,23 +352,6 @@ function Dashboard() {
           </CardContent>
         </Card>
       </section>
-      <footer className="mt-8 rounded-2xl bg-gradient-forest p-6 text-white shadow-lg relative overflow-hidden">
-        {/* Camada de brilho para dar profundidade ao gradiente */}
-        <div className="absolute inset-0 bg-white/10 opacity-20 pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col items-center gap-4 text-center md:flex-row md:text-left md:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-lg font-semibold font-display leading-relaxed">
-              Integramos tecnologia com práticas tradicionais da Amazônia, 
-              promovendo produção sustentável através da gestão inteligente 
-              de sistemas agroflorestais.
-            </p>
-          </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-            <Leaf className="h-6 w-6 text-white" />
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

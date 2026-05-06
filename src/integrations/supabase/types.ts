@@ -39,6 +39,160 @@ export type Database = {
   }
   public: {
     Tables: {
+      carbon_credit_credits: {
+        Row: {
+          blockchain_reference: string
+          buyer_user_id: string | null
+          consortium_id: string
+          created_at: string
+          credit_amount_tco2: number
+          estimated_co2_kg_year: number
+          id: string
+          issued_at: string
+          listed_at: string | null
+          notes: string | null
+          price_brl: number | null
+          retired_at: string | null
+          sold_at: string | null
+          status: string
+          token_code: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blockchain_reference: string
+          buyer_user_id?: string | null
+          consortium_id: string
+          created_at?: string
+          credit_amount_tco2?: number
+          estimated_co2_kg_year?: number
+          id?: string
+          issued_at?: string
+          listed_at?: string | null
+          notes?: string | null
+          price_brl?: number | null
+          retired_at?: string | null
+          sold_at?: string | null
+          status?: string
+          token_code: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blockchain_reference?: string
+          buyer_user_id?: string | null
+          consortium_id?: string
+          created_at?: string
+          credit_amount_tco2?: number
+          estimated_co2_kg_year?: number
+          id?: string
+          issued_at?: string
+          listed_at?: string | null
+          notes?: string | null
+          price_brl?: number | null
+          retired_at?: string | null
+          sold_at?: string | null
+          status?: string
+          token_code?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carbon_credit_credits_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carbon_credit_credits_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_co2_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "carbon_credit_credits_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_dashboard"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "carbon_credit_credits_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_environment_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "carbon_credit_credits_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_balance"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "carbon_credit_credits_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "consortia_water_reference_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "carbon_credit_credits_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "producer_public_consortia"
+            referencedColumns: ["consortium_id"]
+          },
+        ]
+      }
+      carbon_credit_transactions: {
+        Row: {
+          amount_tco2: number
+          buyer_user_id: string | null
+          created_at: string
+          credit_id: string
+          event_type: string
+          id: string
+          notes: string | null
+          price_brl: number | null
+          seller_user_id: string
+        }
+        Insert: {
+          amount_tco2?: number
+          buyer_user_id?: string | null
+          created_at?: string
+          credit_id: string
+          event_type: string
+          id?: string
+          notes?: string | null
+          price_brl?: number | null
+          seller_user_id: string
+        }
+        Update: {
+          amount_tco2?: number
+          buyer_user_id?: string | null
+          created_at?: string
+          credit_id?: string
+          event_type?: string
+          id?: string
+          notes?: string | null
+          price_brl?: number | null
+          seller_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carbon_credit_transactions_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "carbon_credit_credits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           created_at: string
@@ -78,6 +232,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          latitude: number | null
+          location_label: string | null
+          longitude: number | null
           measurement_mode: string
           name: string
           photo_url: string | null
@@ -95,6 +252,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          latitude?: number | null
+          location_label?: string | null
+          longitude?: number | null
           measurement_mode?: string
           name: string
           photo_url?: string | null
@@ -112,6 +272,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          latitude?: number | null
+          location_label?: string | null
+          longitude?: number | null
           measurement_mode?: string
           name?: string
           photo_url?: string | null
@@ -197,6 +360,13 @@ export type Database = {
             columns: ["consortium_id"]
             isOneToOne: false
             referencedRelation: "consortia_water_reference_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "consortium_items_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "producer_public_consortia"
             referencedColumns: ["consortium_id"]
           },
           {
@@ -389,6 +559,9 @@ export type Database = {
           created_at: string
           custom_species_name: string | null
           id: string
+          latitude: number | null
+          location_label: string | null
+          longitude: number | null
           notes: string | null
           photo_url: string | null
           planted_at: string
@@ -404,6 +577,9 @@ export type Database = {
           created_at?: string
           custom_species_name?: string | null
           id?: string
+          latitude?: number | null
+          location_label?: string | null
+          longitude?: number | null
           notes?: string | null
           photo_url?: string | null
           planted_at?: string
@@ -419,6 +595,9 @@ export type Database = {
           created_at?: string
           custom_species_name?: string | null
           id?: string
+          latitude?: number | null
+          location_label?: string | null
+          longitude?: number | null
           notes?: string | null
           photo_url?: string | null
           planted_at?: string
@@ -470,6 +649,13 @@ export type Database = {
             columns: ["consortium_id"]
             isOneToOne: false
             referencedRelation: "consortia_water_reference_summary"
+            referencedColumns: ["consortium_id"]
+          },
+          {
+            foreignKeyName: "plantings_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "producer_public_consortia"
             referencedColumns: ["consortium_id"]
           },
           {
@@ -644,6 +830,13 @@ export type Database = {
             referencedColumns: ["consortium_id"]
           },
           {
+            foreignKeyName: "products_source_consortium_id_fkey"
+            columns: ["source_consortium_id"]
+            isOneToOne: false
+            referencedRelation: "producer_public_consortia"
+            referencedColumns: ["consortium_id"]
+          },
+          {
             foreignKeyName: "products_source_planting_id_fkey"
             columns: ["source_planting_id"]
             isOneToOne: false
@@ -676,6 +869,9 @@ export type Database = {
           full_name: string | null
           id: string
           points: number
+          producer_latitude: number | null
+          producer_location_label: string | null
+          producer_longitude: number | null
           role: Database["public"]["Enums"]["user_role"]
           state: string | null
           updated_at: string
@@ -690,6 +886,9 @@ export type Database = {
           full_name?: string | null
           id?: string
           points?: number
+          producer_latitude?: number | null
+          producer_location_label?: string | null
+          producer_longitude?: number | null
           role?: Database["public"]["Enums"]["user_role"]
           state?: string | null
           updated_at?: string
@@ -704,6 +903,9 @@ export type Database = {
           full_name?: string | null
           id?: string
           points?: number
+          producer_latitude?: number | null
+          producer_location_label?: string | null
+          producer_longitude?: number | null
           role?: Database["public"]["Enums"]["user_role"]
           state?: string | null
           updated_at?: string
@@ -941,6 +1143,13 @@ export type Database = {
             referencedColumns: ["consortium_id"]
           },
           {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "producer_public_consortia"
+            referencedColumns: ["consortium_id"]
+          },
+          {
             foreignKeyName: "water_logs_planting_id_fkey"
             columns: ["planting_id"]
             isOneToOne: false
@@ -1068,7 +1277,73 @@ export type Database = {
             referencedRelation: "consortia_water_reference_summary"
             referencedColumns: ["consortium_id"]
           },
+          {
+            foreignKeyName: "water_logs_consortium_id_fkey"
+            columns: ["consortium_id"]
+            isOneToOne: false
+            referencedRelation: "producer_public_consortia"
+            referencedColumns: ["consortium_id"]
+          },
         ]
+      }
+      environment_location_points: {
+        Row: {
+          created_at: string | null
+          happened_at: string | null
+          latitude: number | null
+          location_label: string | null
+          longitude: number | null
+          status: string | null
+          target_id: string | null
+          target_type: string | null
+          title: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      producer_public_consortia: {
+        Row: {
+          consortium_id: string | null
+          created_at: string | null
+          description: string | null
+          estimated_co2_avg_kg_year: number | null
+          estimated_water_avg_liters_month: number | null
+          name: string | null
+          photo_url: string | null
+          total_seedlings: number | null
+          user_id: string | null
+          verification_method:
+            | Database["public"]["Enums"]["verification_method"]
+            | null
+        }
+        Relationships: []
+      }
+      producer_public_summary: {
+        Row: {
+          actual_water_liters_month: number | null
+          avatar_url: string | null
+          city: string | null
+          consortia_count: number | null
+          display_name: string | null
+          estimated_co2_avg_kg_year: number | null
+          estimated_water_savings_liters_month: number | null
+          full_name: string | null
+          listed_credits: number | null
+          points: number | null
+          producer_latitude: number | null
+          producer_location_label: string | null
+          producer_longitude: number | null
+          reference_month: string | null
+          revenue_brl: number | null
+          sold_credits: number | null
+          state: string | null
+          total_credits: number | null
+          total_seedlings: number | null
+          total_tco2: number | null
+          user_id: string | null
+          verified_plantings_count: number | null
+        }
+        Relationships: []
       }
       species_with_co2: {
         Row: {
@@ -1100,6 +1375,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_carbon_credit_summary: {
+        Row: {
+          listed_credits: number | null
+          listed_tco2: number | null
+          retired_credits: number | null
+          revenue_brl: number | null
+          sold_credits: number | null
+          sold_tco2: number | null
+          total_credits: number | null
+          total_tco2: number | null
+          user_id: string | null
+        }
+        Relationships: []
       }
       user_co2_summary: {
         Row: {

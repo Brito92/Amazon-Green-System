@@ -6,6 +6,14 @@ O projeto usa Capacitor para empacotar o frontend como aplicativo Android.
 
 ## Comandos Principais
 
+1. Instalar o capacitor pelo terminal do compilador:
+
+npm install @capacitor/core @capacitor/cli 
+
+Preparar os arquivos para uma versão estática.
+	
+2. Nome do folder onde está o sistema possui acentos, espaços, etc. Caso o nome possua essas características, renomear para um nome padrão sem acentos e sem espaçamentos.
+
 ```powershell
 npm run build
 npm run cap:sync

@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { uploadMedia } from "@/lib/upload";
 import { methodLabel, ptDate } from "@/lib/format";
-import { Droplets, Info, Leaf, Loader2, Plus, Sprout, TreePine, Trash2 } from "lucide-react";
+import { Droplets, Info, Leaf, Loader2, MapPin, Plus, Sprout, TreePine, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/refloreste")({
@@ -42,6 +42,9 @@ type Planting = {
   planted_at: string;
   status: string;
   verification_method: string;
+  location_label: string | null;
+  latitude: number | null;
+  longitude: number | null;
   notes: string | null;
   photo_url: string | null;
   species: { common_name: string | null } | null;
@@ -57,6 +60,51 @@ type Consortium = ConsortiumRow & {
   environment: EnvironmentRow | null;
   waterBalance: WaterBalanceRow | null;
 };
+
+async function captureCurrentLocation(
+  onSuccess: (coords: { latitude: number; longitude: number }) => void,
+  onError: () => void,
+) {
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform()) {
+      const { Geolocation } = await import("@capacitor/geolocation");
+      const permission = await Geolocation.requestPermissions();
+      if (permission.location === "granted" || permission.coarseLocation === "granted") {
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+        });
+        onSuccess({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        return;
+      }
+    }
+  } catch {
+    // Fallback for web
+  }
+
+  if (!navigator.geolocation) {
+    onError();
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      onSuccess({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+    },
+    () => onError(),
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+    },
+  );
+}
 
 type SpeciesDraft = {
   commonName: string;
@@ -163,7 +211,7 @@ function Refloreste() {
         supabase
           .from("plantings")
           .select(
-            "id, planted_at, status, verification_method, notes, photo_url, species:species_id(common_name), consortium:consortium_id(id, name)",
+            "id, planted_at, status, verification_method, location_label, latitude, longitude, notes, photo_url, species:species_id(common_name), consortium:consortium_id(id, name)",
           )
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
@@ -439,9 +487,13 @@ function NewPlantingCard({
   const [consortiumId, setConsortiumId] = useState<string>("none");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
+  const [locationLabel, setLocationLabel] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [method, setMethod] = useState<Database["public"]["Enums"]["verification_method"]>("photo");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [capturingLocation, setCapturingLocation] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -461,6 +513,9 @@ function NewPlantingCard({
         species_id: speciesId,
         consortium_id: consortiumId === "none" ? null : consortiumId,
         planted_at: date,
+        location_label: locationLabel || null,
+        latitude: latitude ? Number(latitude) : null,
+        longitude: longitude ? Number(longitude) : null,
         notes: notes || null,
         verification_method: method,
         photo_url: photoUrl,
@@ -471,6 +526,9 @@ function NewPlantingCard({
       toast.success("Muda cadastrada com sucesso.");
       setSpeciesId("");
       setConsortiumId("none");
+      setLocationLabel("");
+      setLatitude("");
+      setLongitude("");
       setNotes("");
       setFile(null);
       await onCreated();
@@ -479,6 +537,22 @@ function NewPlantingCard({
     } finally {
       setBusy(false);
     }
+  };
+
+  const captureLocation = () => {
+    setCapturingLocation(true);
+    void captureCurrentLocation(
+      (coords) => {
+        setLatitude(coords.latitude.toFixed(7));
+        setLongitude(coords.longitude.toFixed(7));
+        setCapturingLocation(false);
+        toast.success("Localização da muda capturada.");
+      },
+      () => {
+        setCapturingLocation(false);
+        toast.error("Não foi possível capturar a localização da muda.");
+      },
+    );
   };
 
   return (
@@ -562,6 +636,37 @@ function NewPlantingCard({
           </div>
 
           <div className="space-y-2 sm:col-span-2">
+            <Label>Local de plantio</Label>
+            <Textarea
+              value={locationLabel}
+              onChange={(event) => setLocationLabel(event.target.value)}
+              rows={2}
+              placeholder="Ex.: Sítio Boa Esperança, ramal 3, margem do igarapé."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Latitude</Label>
+            <Input value={latitude} onChange={(event) => setLatitude(event.target.value)} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Longitude</Label>
+            <Input value={longitude} onChange={(event) => setLongitude(event.target.value)} />
+          </div>
+
+          <div className="sm:col-span-2">
+            <Button type="button" variant="outline" onClick={captureLocation} disabled={capturingLocation}>
+              {capturingLocation ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <MapPin className="mr-2 h-4 w-4" />
+              )}
+              Usar minha localização atual
+            </Button>
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
             <Label>Observações</Label>
             <Textarea
               value={notes}
@@ -593,6 +698,9 @@ function NewConsortiumCard({
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [locationLabel, setLocationLabel] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [method, setMethod] = useState<Database["public"]["Enums"]["verification_method"]>("hybrid");
   const [file, setFile] = useState<File | null>(null);
   const [items, setItems] = useState<ConsortiumDraftItem[]>([
@@ -600,6 +708,7 @@ function NewConsortiumCard({
     { localId: crypto.randomUUID(), speciesId: "", quantity: "1" },
   ]);
   const [busy, setBusy] = useState(false);
+  const [capturingLocation, setCapturingLocation] = useState(false);
 
   const totalSeedlings = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const distinctSpecies = new Set(items.map((item) => item.speciesId).filter(Boolean)).size;
@@ -665,6 +774,9 @@ function NewConsortiumCard({
           user_id: user.id,
           name: name.trim(),
           description: description || null,
+          location_label: locationLabel || null,
+          latitude: latitude ? Number(latitude) : null,
+          longitude: longitude ? Number(longitude) : null,
           photo_url: photoUrl,
           species_list: [...new Set(fallbackSpeciesList)],
           verification_method: method,
@@ -693,6 +805,9 @@ function NewConsortiumCard({
       toast.success("Consórcio cadastrado com composição ambiental.");
       setName("");
       setDescription("");
+      setLocationLabel("");
+      setLatitude("");
+      setLongitude("");
       setMethod("hybrid");
       setFile(null);
       setItems([
@@ -705,6 +820,22 @@ function NewConsortiumCard({
     } finally {
       setBusy(false);
     }
+  };
+
+  const captureLocation = () => {
+    setCapturingLocation(true);
+    void captureCurrentLocation(
+      (coords) => {
+        setLatitude(coords.latitude.toFixed(7));
+        setLongitude(coords.longitude.toFixed(7));
+        setCapturingLocation(false);
+        toast.success("Localização do consórcio capturada.");
+      },
+      () => {
+        setCapturingLocation(false);
+        toast.error("Não foi possível capturar a localização do consórcio.");
+      },
+    );
   };
 
   return (
@@ -755,6 +886,37 @@ function NewConsortiumCard({
                 rows={3}
                 placeholder="Descreva o sistema, o manejo e os objetivos do consórcio."
               />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Local de plantio</Label>
+              <Textarea
+                value={locationLabel}
+                onChange={(event) => setLocationLabel(event.target.value)}
+                rows={2}
+                placeholder="Ex.: Área agroflorestal da comunidade, próximo ao igarapé principal."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Latitude</Label>
+              <Input value={latitude} onChange={(event) => setLatitude(event.target.value)} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Longitude</Label>
+              <Input value={longitude} onChange={(event) => setLongitude(event.target.value)} />
+            </div>
+
+            <div className="sm:col-span-2">
+              <Button type="button" variant="outline" onClick={captureLocation} disabled={capturingLocation}>
+                {capturingLocation ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <MapPin className="mr-2 h-4 w-4" />
+                )}
+                Usar minha localização atual
+              </Button>
             </div>
           </div>
 
@@ -1038,6 +1200,16 @@ function HistoryConsortia({
                       ? `${consortium.area_hectares ?? 0} ha (legado)`
                       : `${consortium.total_seedlings} mudas planejadas`}
                   </div>
+                  {consortium.location_label && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Local: {consortium.location_label}
+                    </div>
+                  )}
+                  {consortium.latitude !== null && consortium.longitude !== null && (
+                    <div className="text-xs text-muted-foreground">
+                      Coordenadas: {Number(consortium.latitude).toFixed(5)}, {Number(consortium.longitude).toFixed(5)}
+                    </div>
+                  )}
                 </div>
                 <StatusBadge status={consortium.status} />
               </div>
@@ -1174,6 +1346,16 @@ function HistoryPlantings({
                   <div className="text-xs text-muted-foreground">
                     {ptDate(planting.planted_at)} · {methodLabel(planting.verification_method)}
                   </div>
+                  {planting.location_label && (
+                    <div className="text-xs text-muted-foreground">
+                      Local: {planting.location_label}
+                    </div>
+                  )}
+                  {planting.latitude !== null && planting.longitude !== null && (
+                    <div className="text-xs text-muted-foreground">
+                      Coordenadas: {Number(planting.latitude).toFixed(5)}, {Number(planting.longitude).toFixed(5)}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Select value={planting.consortium?.id ?? "none"} onValueChange={(value) => void link(planting.id, value)}>

@@ -1,0 +1,8 @@
+Coloque o arquivo final do aplicativo Android nesta pasta com este nome:
+
+amazon-green-system.apk
+
+Caminho esperado pelo botao "Baixar APK":
+/public/apk/amazon-green-system.apk
+
+Depois de adicionar o arquivo, rode novamente o build e o sync do app se necessario.
