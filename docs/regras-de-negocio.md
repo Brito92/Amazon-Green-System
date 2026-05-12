@@ -1,92 +1,92 @@
-# Regras de Negocio
+# Regras de Negócio
 
-## Muda Individual
+## Muda individual
 
-A muda individual e o fluxo simples do sistema.
+A muda individual é o fluxo simples do sistema.
 
 Ela serve para:
 
 - registrar plantios isolados
-- registrar uma acao rapida em campo
-- vincular posteriormente uma muda a um consorcio
+- registrar uma ação rápida em campo
+- vincular posteriormente uma muda a um consórcio
 
 Regras:
 
-- exige especie
+- exige espécie
 - exige data
-- usa um metodo de verificacao
-- pode ter foto e observacoes
-- pode ser vinculada a um consorcio existente
+- usa um método de verificação
+- pode ter foto e observações
+- pode ser vinculada a um consórcio existente
 
-## Consorcio
+## Consórcio
 
-O consorcio e o fluxo principal.
+O consórcio é o fluxo principal.
 
 Regras:
 
-- minimo de 3 mudas
-- minimo de 2 especies diferentes
+- mínimo de 3 mudas
+- mínimo de 2 espécies diferentes
 - pode exibir aviso de baixa diversidade
-- e modelado por itens de composicao, nao mais por hectare como regra principal
+- é modelado por itens de composição, não mais por hectare como regra principal
 
-## Consorcios Legados
+## Consórcios legados
 
 Registros antigos podem continuar usando:
 
 - `area_hectares`
 - `species_list`
 
-Eles continuam visiveis, mas os calculos ambientais funcionam melhor no modelo novo por quantidade de mudas.
+Eles continuam visíveis, mas os cálculos ambientais funcionam melhor no modelo novo por quantidade de mudas.
 
-## Especies
+## Espécies
 
 O sistema possui:
 
-- especies padrao
-- especies customizadas criadas por usuario
+- espécies padrão
+- espécies customizadas criadas por usuário
 
 Regras:
 
-- especies customizadas devem ser ligadas a uma categoria ambiental
-- especies customizadas ficam visiveis para o proprio criador
-- moderadores e admins podem ve-las para validacao
+- espécies customizadas devem ser ligadas a uma categoria ambiental
+- espécies customizadas ficam visíveis para o próprio criador
+- moderadores e admins podem vê-las para validação
 
-## Categorias Ambientais
+## Categorias ambientais
 
-As categorias ambientais sao a base dos calculos de CO2 e agua.
+As categorias ambientais são a base dos cálculos de CO2 e água.
 
 Categorias atuais:
 
-- Arborea Climax
-- Arborea Pioneira
+- Arbórea Clímax
+- Arbórea Pioneira
 - Palmeiras
 - Arbustiva
-- Herbacea
-- Nao sei classificar
+- Herbácea
+- Não sei classificar
 
 ## CO2
 
-O CO2 nao e medido diretamente por sensor.
+O CO2 não é medido por sensor.
 
-Ele e calculado como estimativa usando:
+Ele é calculado como estimativa usando:
 
-- categoria da especie
+- categoria da espécie
 - faixa de captura da categoria
-- valor medio para consolidacao
+- valor médio para consolidação
 
 O sistema deve apresentar esse dado como estimativa.
 
-## Agua
+## Água
 
-O uso de agua tambem e tratado como estimativa + registro manual.
+O uso de água é tratado como estimativa mais registro manual.
 
-Logica:
+Lógica:
 
-- a referencia hidrica vem da categoria ambiental
+- a referência hídrica vem da categoria ambiental
 - o uso real vem de `water_logs`
-- o dashboard compara uso real com referencia
+- o dashboard compara uso real com referência
 
-## Validacao
+## Validação
 
 Registros podem ter status:
 
@@ -98,26 +98,55 @@ Moderadores e admins:
 
 - aprovam
 - rejeitam
-- registram observacoes de validacao
+- registram observações de validação
 
-## Pontuacao
+## Pontuação
 
-A pontuacao e recalculada a partir das regras do banco.
+A pontuação é recalculada a partir das regras do banco.
 
 Hoje o sistema combina:
 
 - pontos de mudas
-- pontos de consorcios
-- bonus quando aplicavel
+- pontos de consórcios
+- bônus quando aplicável
+
+## Créditos simulados
+
+Os créditos são uma representação interna do impacto ambiental validado.
+
+Regras:
+
+- a emissão parte de consórcio validado
+- um consórcio não deve emitir créditos duplicados
+- créditos podem ser listados, comprados, vendidos e aposentados
+
+## Blockchain
+
+A blockchain é complementar ao banco principal.
+
+Regras:
+
+- somente eventos críticos são enviados
+- o envio não substitui o registro no Supabase
+- o sistema deve evitar duplicidade por `target_type + target_id + event_type`
+- mineração e auditoria são operações administrativas
+
+Eventos atuais:
+
+- `muda_validada`
+- `consorcio_validado`
+- `credito_emitido`
 
 ## Dashboard
 
-O dashboard combina informacoes de:
+O dashboard combina informações de:
 
 - mudas
-- consorcios
+- consórcios
 - views ambientais
 - pontos do perfil
+- créditos
 - carrinho
+- resumo blockchain
 
-Como regra de manutencao, cada card deve ter uma fonte de dados claramente definida.
+Cada card deve ter uma fonte de dados claramente definida.

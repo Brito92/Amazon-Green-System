@@ -1,6 +1,6 @@
-# Sistema Verde da Amazonia
+# Sistema Verde da Amazônia
 
-Aplicacao web e mobile para registro de mudas, consorcios agroflorestais, validacao de acoes ambientais, acompanhamento de carbono estimado, controle de agua e apoio a interacoes de mercado da rede.
+Aplicação web e mobile para registro de mudas, consórcios agroflorestais, validação de ações ambientais, acompanhamento de carbono estimado, controle de água, vitrine de produtores e créditos simulados com rastreabilidade blockchain.
 
 ## Stack
 
@@ -8,25 +8,30 @@ Aplicacao web e mobile para registro de mudas, consorcios agroflorestais, valida
 - UI: Tailwind CSS + Radix UI
 - Backend/Banco: Supabase
 - Mobile: Capacitor + Android Studio
+- Integração externa: API blockchain para registro, mineração e auditoria
 
-## Principais Fluxos
+## Principais fluxos
 
 - Cadastro simples de muda
-- Cadastro de consorcio por especies e quantidades
-- Registro manual de uso de agua
-- Dashboard com indicadores ambientais
-- Validacao por moderadores e admins
+- Cadastro de consórcio por espécies e quantidades
+- Cadastro de espécies customizadas
+- Registro manual de uso de água
+- Dashboard com indicadores ambientais e resumo blockchain
+- Validação por moderadores e admins
+- Créditos simulados com emissão, listagem, compra, aposentadoria e rastreabilidade
+- Vitrine pública de produtores
 - Mercado, carrinho e chat
 
-## Estrutura do Projeto
+## Estrutura do projeto
 
 - `src/routes`: telas principais do sistema
 - `src/components`: componentes compartilhados
-- `src/hooks`: hooks de autenticacao e apoio
+- `src/hooks`: autenticação e utilitários de estado
+- `src/lib`: helpers de formatação, blockchain e apoio ao frontend
 - `src/integrations/supabase`: cliente e tipos do Supabase
-- `src/lib`: funcoes auxiliares
-- `supabase/migrations`: historico local de migrations
-- `docs`: documentacao funcional e tecnica
+- `supabase/migrations`: histórico local de schema
+- `supabase/functions`: Edge Functions
+- `docs`: documentação funcional, técnica e ADRs
 
 ## Como rodar localmente
 
@@ -35,46 +40,50 @@ npm install
 npm run dev
 ```
 
-## Build de producao
+## Build de produção
 
 ```powershell
 npm run build
 ```
 
-## Geracao de APK
+## Geração de APK
 
 ```powershell
 npm run android
 npx cap open android
 ```
 
-Observacoes:
-
-- O projeto usa `dist/client` como `webDir` do Capacitor.
-- E necessario ter Java configurado e Android Studio instalado.
-- Veja detalhes em [docs/mobile-apk.md](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\mobile-apk.md).
-
 ## Supabase
 
 O projeto depende de:
 
-- tabelas de autenticacao e perfis
-- registros de mudas e consorcios
+- autenticação e perfis
+- registros de mudas e consórcios
 - categorias ambientais
 - views de dashboard ambiental
-- RLS para especies, registros e moderacao
+- RLS para espécies, registros, créditos e moderação
+- Edge Functions para blockchain
 
-Veja:
+## Blockchain
 
-- [docs/modelo-de-dados.md](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\modelo-de-dados.md)
-- [docs/operacao-supabase.md](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\operacao-supabase.md)
+A blockchain não substitui o banco principal. O Supabase continua sendo a base operacional do sistema, enquanto a integração blockchain registra eventos críticos como:
 
-## Documentacao
+- `muda_validada`
+- `consorcio_validado`
+- `credito_emitido`
 
-- [Visao geral](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\visao-geral.md)
-- [Regras de negocio](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\regras-de-negocio.md)
-- [Modelo de dados](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\modelo-de-dados.md)
-- [Frontend](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\frontend.md)
-- [Mobile / APK](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\mobile-apk.md)
-- [Operacao do Supabase](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\operacao-supabase.md)
-- [ADRs](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\adr)
+Além do registro, há suporte a:
+
+- mineração manual de bloco
+- auditoria da cadeia
+- exibição de hash e status no app
+
+## Documentação
+
+- [Visão geral](docs/visao-geral.md)
+- [Regras de negócio](docs/regras-de-negocio.md)
+- [Modelo de dados](docs/modelo-de-dados.md)
+- [Frontend](docs/frontend.md)
+- [Mobile / APK](docs/mobile-apk.md)
+- [Operação do Supabase](docs/operacao-supabase.md)
+- [ADRs](docs/adr)

@@ -1,6 +1,6 @@
-# Operacao do Supabase
+# Operação do Supabase
 
-## Vinculo do Projeto
+## Vínculo do projeto
 
 O projeto pode ser ligado ao Supabase CLI via:
 
@@ -8,7 +8,7 @@ O projeto pode ser ligado ao Supabase CLI via:
 npx supabase link --project-ref SEU_PROJECT_REF
 ```
 
-## Regeneracao de Tipos
+## Regeneração de tipos
 
 Sempre que o schema mudar:
 
@@ -18,27 +18,50 @@ npx supabase gen types typescript --linked | Out-File -Encoding utf8 .\src\integ
 
 ## Migrations
 
-As migrations locais ficam em:
+As migrations locais ficam em `supabase/migrations`.
 
-[C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\supabase\migrations](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\supabase\migrations)
+## Fluxo sem Docker
 
-## Fluxo Sem Docker
-
-Quando `db pull` nao puder ser usado:
+Quando `db pull` não puder ser usado:
 
 1. criar arquivo `.sql` manual em `supabase/migrations`
 2. colar as queries aplicadas no Supabase
 3. regenerar `types.ts`
 
-## Fluxo Com Docker
+## Fluxo com Docker
 
-Quando o Docker estiver disponivel:
+Quando o Docker estiver disponível:
 
 ```powershell
-npx supabase db pull
+npx supabase db push
 ```
 
-Isso gera um snapshot local do delta remoto.
+Use `db pull` com cuidado. Se o histórico local e remoto estiver divergente, o comando pode falhar ou gerar snapshots extras.
+
+## Edge Functions
+
+O projeto usa Edge Functions para blockchain:
+
+- `blockchain-register-event`
+- `blockchain-mine`
+- `blockchain-validate`
+
+Deploy:
+
+```powershell
+npx supabase functions deploy blockchain-register-event
+npx supabase functions deploy blockchain-mine
+npx supabase functions deploy blockchain-validate
+```
+
+## Secrets
+
+Para a integração blockchain:
+
+```powershell
+npx supabase secrets set BLOCKCHAIN_API_BASE_URL=https://ew.app.br/blockchain/api
+npx supabase secrets set BLOCKCHAIN_API_TOKEN=SEU_TOKEN
+```
 
 ## Roles
 
@@ -48,19 +71,23 @@ O sistema usa:
 - `moderator`
 - `admin`
 
-Hoje a promocao de usuarios pode ser feita diretamente na tabela `profiles`.
+Hoje a promoção de usuários pode ser feita diretamente na tabela `profiles`.
 
-## RLS Importante
+## RLS importante
 
-Ha regras de acesso criticas para:
+Há regras de acesso críticas para:
 
-- especies customizadas
-- registros de agua
-- consorcios e seus itens
-- moderacao
+- espécies customizadas
+- registros de água
+- consórcios e seus itens
+- créditos simulados
+- blockchain
+- moderação
 
 ## Cuidados
 
-- Alterar o banco sem registrar a migration local aumenta o risco de divergencia
+- Alterar o banco sem registrar a migration local aumenta o risco de divergência
 - Alterar views pode impactar o frontend imediatamente
-- Policies antigas de `SELECT` podem anular restricoes novas se permanecerem ativas
+- Policies antigas de `SELECT` podem anular restrições novas se permanecerem ativas
+- `db push` exige que o histórico remoto exista também no diretório local
+- a blockchain depende de secrets corretos; sem eles, as Edge Functions falham

@@ -1,83 +1,105 @@
-# Visao Geral
+# Visão Geral
 
 ## Objetivo
 
-O sistema foi construido para apoiar iniciativas de reflorestamento e sistemas agroflorestais, combinando registro operacional, verificacao, indicadores ambientais e recursos de rede comercial.
+O sistema foi construído para apoiar iniciativas de reflorestamento e sistemas agroflorestais na Amazônia, combinando registro operacional, validação, indicadores ambientais, rastreabilidade e possibilidades de valorização econômica.
 
-## Perfis de Usuario
+## Perfis de usuário
 
 - `user`: produtor ou participante da rede
-- `moderator`: revisa e valida registros
-- `admin`: possui as capacidades de moderacao e controle ampliado
+- `moderator`: revisa, valida e pode operar mineração e auditoria
+- `admin`: possui as capacidades de moderação com acesso ampliado
 
-## Pilares do Produto
+## Pilares do produto
 
 - Registro de mudas individuais
-- Registro de consorcios agroflorestais
-- Validacao de registros
+- Registro de consórcios agroflorestais
+- Validação de registros
 - Acompanhamento de pontos e impacto
-- Controle estimado de agua
-- Calculo estimado de CO2
+- Controle estimado e registrado de água
+- Cálculo estimado de CO2
+- Créditos simulados
+- Rastreabilidade blockchain
+- Vitrine de produtores
 - Mercado, carrinho e chat
 
-## Fluxos Principais
+## Fluxos principais
 
 ### 1. Muda individual
 
-Fluxo leve para registrar uma muda de forma rapida.
+Fluxo leve para registrar um plantio isolado.
 
-Informacoes centrais:
+Informações centrais:
 
-- especie
+- espécie
 - data do plantio
-- metodo de verificacao
+- método de verificação
 - foto opcional
-- observacoes
-- vinculo opcional com consorcio
+- observações
+- vínculo opcional com consórcio
 
-### 2. Consorcio
+### 2. Consórcio
 
 Fluxo principal do sistema para representar um plantio estruturado.
 
-Informacoes centrais:
+Informações centrais:
 
-- nome do consorcio
-- descricao
-- metodo de verificacao
+- nome do consórcio
+- descrição
+- método de verificação
 - foto
-- especies e quantidades
+- espécies e quantidades
 
-### 3. Registro de agua
+### 3. Registro de água
 
-Fluxo de controle manual, feito preferencialmente no contexto do consorcio.
+Fluxo de controle manual, preferencialmente feito no contexto do consórcio.
 
-Informacoes centrais:
+Informações centrais:
 
-- consorcio
+- consórcio
 - data do registro
 - litros utilizados
-- metodo de irrigacao
-- fonte de agua
-- observacoes
+- método de irrigação
+- fonte de água
+- observações
 
-### 4. Validacao
+### 4. Validação
 
-Moderadores e admins podem aprovar ou rejeitar mudas e consorcios.
+Moderadores e admins aprovam ou rejeitam mudas e consórcios. Após a validação, eventos importantes podem ser enviados para a camada blockchain.
 
-### 5. Dashboard
+### 5. Créditos
 
-Resume atividade, pontos, consorcios, carbono estimado, uso de agua e ranking.
+Consórcios validados podem gerar créditos simulados. Esses créditos podem ser listados, comprados, aposentados e registrados na blockchain.
 
-## Organizacao Atual do Produto
+### 6. Blockchain
 
-O projeto esta em uma fase em que:
+Eventos críticos podem ser registrados em uma API blockchain externa:
 
-- o consorcio e o fluxo principal
+- `muda_validada`
+- `consorcio_validado`
+- `credito_emitido`
+
+Depois do registro, o sistema pode:
+
+- mostrar hash e status
+- minerar bloco
+- auditar a cadeia
+
+### 7. Dashboard
+
+Resume atividade, pontos, consórcios, carbono estimado, uso de água, créditos e eventos blockchain.
+
+## Organização atual do produto
+
+O projeto está em uma fase em que:
+
+- o consórcio é o fluxo principal
 - a muda individual continua existindo como fluxo simples
-- o carbono e a agua sao estimados por categoria ambiental
+- o carbono e a água são estimados por categoria ambiental
+- a blockchain funciona como camada complementar de rastreabilidade
 - parte do modelo antigo por hectare ainda continua como legado
 
-## Documentos Relacionados
+## Documentos relacionados
 
-- [Regras de negocio](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\regras-de-negocio.md)
-- [Modelo de dados](C:\Users\brito\OneDrive\Documentos\terra-viva-link-main\terra-viva-link-main\docs\modelo-de-dados.md)
+- [Regras de negócio](regras-de-negocio.md)
+- [Modelo de dados](modelo-de-dados.md)
