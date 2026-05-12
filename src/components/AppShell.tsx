@@ -4,14 +4,12 @@ import {
   Coins,
   Home,
   LogOut,
-  Map,
   Menu,
   MessageCircle,
   ShieldCheck,
   ShoppingCart,
   Sprout,
   Store,
-  UserCircle2,
   Users,
   X,
 } from "lucide-react";
@@ -23,8 +21,6 @@ import { supabase } from "@/integrations/supabase/client";
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
   { to: "/refloreste", label: "Refloreste e Ganhe", icon: Sprout },
-  { to: "/mapa", label: "Mapa", icon: Map },
-  { to: "/perfil", label: "Meu Perfil", icon: UserCircle2 },
   { to: "/produtores", label: "Produtores", icon: Users },
   { to: "/creditos", label: "Créditos", icon: Coins },
   { to: "/validacao", label: "Validação", icon: ShieldCheck },
@@ -47,6 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
+
     supabase
       .from("profiles")
       .select("display_name, points")
@@ -57,7 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         setName(data.display_name);
         setPoints(data.points);
       });
-  }, [user, path]);
+  }, [path, user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -134,7 +131,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         <main className="w-full lg:pl-64">
-          <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8 lg:py-10">{children}</div>
+          <div className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8 lg:py-10">
+            {children}
+          </div>
         </main>
       </div>
     </div>

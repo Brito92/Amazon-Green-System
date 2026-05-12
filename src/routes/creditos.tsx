@@ -1,24 +1,52 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 import { AppShell } from "@/components/AppShell";
+import { BlockchainBadge } from "@/components/BlockchainBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  mineBlockchain,
+  registerBlockchainEvent,
+  shortHash,
+  validateBlockchain,
+  type BlockchainRecord,
+} from "@/lib/blockchain";
 import { brl, ptDateTime } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { Coins, Leaf, Loader2, ShieldCheck, ShoppingBag, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import {
+  Blocks,
+  Coins,
+  Leaf,
+  Loader2,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+} from "lucide-react";
 
 export const Route = createFileRoute("/creditos")({
   component: () => (
@@ -30,9 +58,11 @@ export const Route = createFileRoute("/creditos")({
   ),
 });
 
+type UserRole = Database["public"]["Enums"]["user_role"];
 type CarbonCredit = Database["public"]["Tables"]["carbon_credit_credits"]["Row"];
 type CarbonCreditTx = Database["public"]["Tables"]["carbon_credit_transactions"]["Row"];
 type CarbonSummary = Database["public"]["Views"]["user_carbon_credit_summary"]["Row"];
+type BlockchainSummary = Database["public"]["Views"]["user_blockchain_summary"]["Row"];
 type EnvironmentRow = Database["public"]["Views"]["consortia_environment_dashboard"]["Row"];
 type ConsortiumRow = Database["public"]["Tables"]["consortia"]["Row"];
 
@@ -79,8 +109,7 @@ function creditStatusLabel(status: string) {
 }
 
 function tokenFragment(token: string) {
-  if (!token) return "AGS";
-  return token.slice(0, 12);
+  return token ? token.slice(0, 12) : "AGS";
 }
 
 function randomTokenCode() {
@@ -94,24 +123,37 @@ function randomBlockchainRef() {
     .join("")}`;
 }
 
+function buildRecordMap(records: BlockchainRecord[]) {
+  return new Map(records.map((record) => [record.target_id, record]));
+}
+
 function CreditosPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<UserRole>("user");
   const [summary, setSummary] = useState<CarbonSummary | null>(null);
+  const [blockchainSummary, setBlockchainSummary] = useState<BlockchainSummary | null>(null);
   const [availableConsortia, setAvailableConsortia] = useState<ConsortiumOption[]>([]);
   const [myCredits, setMyCredits] = useState<CreditWithMeta[]>([]);
   const [marketCredits, setMarketCredits] = useState<CreditWithMeta[]>([]);
   const [walletCredits, setWalletCredits] = useState<CreditWithMeta[]>([]);
   const [transactions, setTransactions] = useState<CarbonCreditTx[]>([]);
+  const [creditRecords, setCreditRecords] = useState<Map<string, BlockchainRecord>>(new Map());
 
   const [selectedConsortiumId, setSelectedConsortiumId] = useState("");
   const [emissionNotes, setEmissionNotes] = useState("");
   const [emitting, setEmitting] = useState(false);
+  const [registeringCreditId, setRegisteringCreditId] = useState<string | null>(null);
+  const [mining, setMining] = useState(false);
+  const [auditing, setAuditing] = useState(false);
+  const [lastBlockchainMessage, setLastBlockchainMessage] = useState<string | null>(null);
 
   const [dialogState, setDialogState] = useState<ListingDialogState>(null);
   const [priceDraft, setPriceDraft] = useState("");
   const [actionNotes, setActionNotes] = useState("");
   const [acting, setActing] = useState(false);
+
+  const isModerator = role === "admin" || role === "moderator";
 
   const selectedConsortium = useMemo(
     () => availableConsortia.find((item) => item.id === selectedConsortiumId) ?? null,
@@ -124,12 +166,14 @@ function CreditosPage() {
 
     const [
       consortiaRes,
-      envRes,
+      environmentRes,
       myCreditsRes,
       marketCreditsRes,
       walletCreditsRes,
       summaryRes,
-      txRes,
+      blockchainSummaryRes,
+      transactionsRes,
+      profileRes,
     ] = await Promise.all([
       supabase
         .from("consortia")
@@ -137,10 +181,7 @@ function CreditosPage() {
         .eq("user_id", user.id)
         .eq("status", "verified")
         .order("created_at", { ascending: false }),
-      supabase
-        .from("consortia_environment_dashboard")
-        .select("*")
-        .eq("user_id", user.id),
+      supabase.from("consortia_environment_dashboard").select("*").eq("user_id", user.id),
       supabase
         .from("carbon_credit_credits")
         .select("*")
@@ -157,34 +198,33 @@ function CreditosPage() {
         .select("*")
         .eq("buyer_user_id", user.id)
         .order("sold_at", { ascending: false }),
-      supabase
-        .from("user_carbon_credit_summary")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle(),
+      supabase.from("user_carbon_credit_summary").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase.from("user_blockchain_summary").select("*").eq("user_id", user.id).maybeSingle(),
       supabase
         .from("carbon_credit_transactions")
         .select("*")
         .or(`seller_user_id.eq.${user.id},buyer_user_id.eq.${user.id}`)
         .order("created_at", { ascending: false })
         .limit(10),
+      supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle(),
     ]);
 
     const myRows = (myCreditsRes.data ?? []) as CarbonCredit[];
-    const allRows = [
+    const allCredits = [
       ...myRows,
       ...((marketCreditsRes.data ?? []) as CarbonCredit[]),
       ...((walletCreditsRes.data ?? []) as CarbonCredit[]),
     ];
 
-    const consortiumIds = [...new Set(allRows.map((row) => row.consortium_id))];
+    const consortiumIds = [...new Set(allCredits.map((row) => row.consortium_id))];
     const userIds = [
       ...new Set(
-        allRows.flatMap((row) => [row.user_id, row.buyer_user_id]).filter(Boolean) as string[],
+        allCredits.flatMap((row) => [row.user_id, row.buyer_user_id]).filter(Boolean) as string[],
       ),
     ];
+    const creditIds = allCredits.map((row) => row.id);
 
-    const [consortiumNamesRes, profilesRes] = await Promise.all([
+    const [consortiumNamesRes, profilesRes, blockchainRes] = await Promise.all([
       consortiumIds.length
         ? supabase.from("consortia").select("id, name").in("id", consortiumIds)
         : Promise.resolve({ data: [] as Array<{ id: string; name: string }>, error: null }),
@@ -194,6 +234,15 @@ function CreditosPage() {
             data: [] as Array<{ user_id: string; display_name: string }>,
             error: null,
           }),
+      creditIds.length
+        ? supabase
+            .from("blockchain_records_display")
+            .select("*")
+            .eq("target_type", "carbon_credit")
+            .eq("event_type", "credito_emitido")
+            .in("target_id", creditIds)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as Array<any>, error: null }),
     ]);
 
     const consortiumNameMap = new Map(
@@ -202,13 +251,15 @@ function CreditosPage() {
     const profileMap = new Map(
       (profilesRes.data ?? []).map((item) => [item.user_id, item.display_name]),
     );
-    const envMap = new Map((envRes.data ?? []).map((item) => [item.consortium_id ?? "", item]));
+    const environmentMap = new Map(
+      (environmentRes.data ?? []).map((item) => [item.consortium_id ?? "", item]),
+    );
     const issuedConsortiumIds = new Set(myRows.map((row) => row.consortium_id));
 
     setAvailableConsortia(
       ((consortiaRes.data ?? []) as ConsortiumRow[]).map((consortium) => ({
         ...consortium,
-        environment: envMap.get(consortium.id) ?? null,
+        environment: environmentMap.get(consortium.id) ?? null,
         hasCredit: issuedConsortiumIds.has(consortium.id),
       })),
     );
@@ -233,8 +284,11 @@ function CreditosPage() {
         sellerName: profileMap.get(row.user_id),
       })),
     );
+    setTransactions((transactionsRes.data ?? []) as CarbonCreditTx[]);
     setSummary(summaryRes.data ?? null);
-    setTransactions((txRes.data ?? []) as CarbonCreditTx[]);
+    setBlockchainSummary(blockchainSummaryRes.data ?? null);
+    setCreditRecords(buildRecordMap((blockchainRes.data ?? []) as unknown as BlockchainRecord[]));
+    if (profileRes.data?.role) setRole(profileRes.data.role);
     setLoading(false);
   };
 
@@ -244,12 +298,12 @@ function CreditosPage() {
 
   useEffect(() => {
     if (!selectedConsortiumId) {
-      const first = availableConsortia.find((item) => !item.hasCredit);
-      if (first) setSelectedConsortiumId(first.id);
+      const firstAvailable = availableConsortia.find((item) => !item.hasCredit);
+      if (firstAvailable) setSelectedConsortiumId(firstAvailable.id);
     }
   }, [availableConsortia, selectedConsortiumId]);
 
-  const emitCredit = async (event: React.FormEvent) => {
+  const emitCredit = async (event: FormEvent) => {
     event.preventDefault();
     if (!user || !selectedConsortium) return;
     if (selectedConsortium.hasCredit) {
@@ -307,9 +361,60 @@ function CreditosPage() {
 
   const activeCredit = dialogState
     ? [...myCredits, ...marketCredits, ...walletCredits].find(
-        (row) => row.id === dialogState.creditId,
+        (item) => item.id === dialogState.creditId,
       ) ?? null
     : null;
+
+  const handleRegisterCredit = async (creditId: string) => {
+    setRegisteringCreditId(creditId);
+    try {
+      await registerBlockchainEvent({
+        targetType: "carbon_credit",
+        targetId: creditId,
+        eventType: "credito_emitido",
+      });
+      toast.success("Crédito registrado na blockchain com sucesso.");
+      await reload();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao registrar crédito.");
+    } finally {
+      setRegisteringCreditId(null);
+    }
+  };
+
+  const handleMine = async () => {
+    setMining(true);
+    try {
+      const result = await mineBlockchain();
+      const block = result?.blockchain?.bloco;
+      setLastBlockchainMessage(
+        block?.indice
+          ? `Bloco #${block.indice} minerado com ${block.total_transacoes ?? 0} transações.`
+          : "Processamento blockchain concluído.",
+      );
+      toast.success("Mineração concluída com sucesso.");
+      await reload();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao minerar bloco.");
+    } finally {
+      setMining(false);
+    }
+  };
+
+  const handleValidate = async () => {
+    setAuditing(true);
+    try {
+      const result = await validateBlockchain();
+      const status = result?.audit_status === "valido" ? "válida" : "com inconsistências";
+      setLastBlockchainMessage(`Última auditoria concluída: cadeia ${status}.`);
+      toast.success("Auditoria blockchain concluída.");
+      await reload();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Falha ao validar blockchain.");
+    } finally {
+      setAuditing(false);
+    }
+  };
 
   const submitAction = async () => {
     if (!user || !dialogState || !activeCredit) return;
@@ -469,22 +574,54 @@ function CreditosPage() {
       <header className="space-y-2">
         <h1 className="font-display text-3xl font-semibold">Créditos de carbono</h1>
         <p className="text-sm text-muted-foreground">
-          Emita, liste, negocie e aposente créditos simulados a partir de consórcios validados.
+          Emita, liste, negocie, audite e rastreie créditos simulados a partir de consórcios validados.
         </p>
       </header>
 
       <Alert className="border-primary/20 bg-secondary/40">
         <ShieldCheck className="h-4 w-4" />
-        <AlertTitle>Simulação acadêmica</AlertTitle>
+        <AlertTitle>Simulação acadêmica com rastreabilidade</AlertTitle>
         <AlertDescription>
-          Este módulo representa uma tokenização interna. Ele não publica ativos em blockchain
-          real, mas cria rastreabilidade, listagem e histórico de transações dentro da plataforma.
+          Os créditos podem ganhar hash, status de mineração
+          e auditoria via integração blockchain externa.
         </AlertDescription>
       </Alert>
 
+      {isModerator && (
+        <Card className="border-border/60 shadow-card">
+          <CardHeader>
+            <CardTitle className="font-display">Operações blockchain</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => void handleMine()} disabled={mining} className="bg-gradient-forest">
+                {mining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Blocks className="mr-2 h-4 w-4" />}
+                Minerar bloco
+              </Button>
+              <Button variant="outline" onClick={() => void handleValidate()} disabled={auditing}>
+                {auditing ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                )}
+                Validar blockchain
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <span>{blockchainSummary?.total_eventos ?? 0} eventos</span>
+              <span>{blockchainSummary?.minerados ?? 0} minerados</span>
+              <span>{blockchainSummary?.auditados_validos ?? 0} auditados</span>
+            </div>
+            {lastBlockchainMessage && (
+              <div className="text-sm text-muted-foreground">{lastBlockchainMessage}</div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
-          <Card key={metric.title} className="shadow-card border-border/60">
+          <Card key={metric.title} className="border-border/60 shadow-card">
             <CardContent className="p-5">
               <div className="text-2xl font-display font-semibold">{metric.value}</div>
               <div className="mt-1 text-xs text-muted-foreground">{metric.title}</div>
@@ -515,7 +652,7 @@ function CreditosPage() {
         </TabsList>
 
         <TabsContent value="emitir" className="mt-6">
-          <Card className="shadow-card border-border/60">
+          <Card className="border-border/60 shadow-card">
             <CardHeader>
               <CardTitle className="font-display">Emissão básica de crédito</CardTitle>
             </CardHeader>
@@ -564,8 +701,7 @@ function CreditosPage() {
                   <MetricPreview
                     title="Crédito gerado"
                     value={`${formatTco2(
-                      Number(selectedConsortium?.environment?.estimated_co2_avg_kg_year ?? 0) /
-                        1000,
+                      Number(selectedConsortium?.environment?.estimated_co2_avg_kg_year ?? 0) / 1000,
                     )} tCO2`}
                     hint="Conversão interna simplificada"
                   />
@@ -576,7 +712,7 @@ function CreditosPage() {
                       rows={3}
                       value={emissionNotes}
                       onChange={(event) => setEmissionNotes(event.target.value)}
-                      placeholder="Contexto do consórcio, validação, observações técnicas..."
+                      placeholder="Contexto do consórcio, validação e observações técnicas..."
                     />
                   </div>
 
@@ -601,58 +737,74 @@ function CreditosPage() {
 
         <TabsContent value="meus" className="mt-6">
           <CreditsList
+            credits={myCredits}
+            creditRecords={creditRecords}
             emptyTitle="Você ainda não emitiu créditos"
             emptyDescription="Emita um crédito a partir de um consórcio validado para iniciar a rastreabilidade."
-            credits={myCredits}
-            actionArea={(credit) => (
-              <div className="flex flex-wrap gap-2">
-                {credit.status === "issued" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setDialogState({ creditId: credit.id, type: "list" })}
-                  >
-                    Listar
-                  </Button>
-                )}
-                {credit.status === "listed" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setDialogState({ creditId: credit.id, type: "cancel" })}
-                  >
-                    Cancelar listagem
-                  </Button>
-                )}
-                {(credit.status === "issued" || credit.status === "sold") && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setDialogState({ creditId: credit.id, type: "retire" })}
-                  >
-                    Aposentar
-                  </Button>
-                )}
-              </div>
-            )}
+            actionArea={(credit) => {
+              const blockchainRecord = creditRecords.get(credit.id);
+              return (
+                <div className="flex flex-wrap gap-2">
+                  {!blockchainRecord && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void handleRegisterCredit(credit.id)}
+                      disabled={registeringCreditId === credit.id}
+                    >
+                      {registeringCreditId === credit.id && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Registrar na blockchain
+                    </Button>
+                  )}
+                  {credit.status === "issued" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDialogState({ creditId: credit.id, type: "list" })}
+                    >
+                      Listar
+                    </Button>
+                  )}
+                  {credit.status === "listed" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDialogState({ creditId: credit.id, type: "cancel" })}
+                    >
+                      Cancelar listagem
+                    </Button>
+                  )}
+                  {(credit.status === "issued" || credit.status === "sold") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDialogState({ creditId: credit.id, type: "retire" })}
+                    >
+                      Aposentar
+                    </Button>
+                  )}
+                </div>
+              );
+            }}
           />
         </TabsContent>
 
         <TabsContent value="mercado" className="mt-6">
           <CreditsList
+            credits={marketCredits}
+            creditRecords={creditRecords}
             emptyTitle="Nenhum crédito disponível no mercado"
             emptyDescription="Quando outros produtores listarem créditos simulados, eles aparecerão aqui."
-            credits={marketCredits}
             actionArea={(credit) => (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  className="bg-gradient-forest"
-                  onClick={() => setDialogState({ creditId: credit.id, type: "buy" })}
-                >
-                  Comprar
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                className="bg-gradient-forest"
+                onClick={() => setDialogState({ creditId: credit.id, type: "buy" })}
+              >
+                Comprar
+              </Button>
             )}
             showSeller
           />
@@ -660,26 +812,25 @@ function CreditosPage() {
 
         <TabsContent value="carteira" className="mt-6 space-y-6">
           <CreditsList
+            credits={walletCredits}
+            creditRecords={creditRecords}
             emptyTitle="Sua carteira ainda está vazia"
             emptyDescription="Créditos adquiridos no mercado aparecem aqui para acompanhamento e aposentadoria."
-            credits={walletCredits}
-            actionArea={(credit) => (
-              <div className="flex flex-wrap gap-2">
-                {credit.status === "sold" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setDialogState({ creditId: credit.id, type: "retire" })}
-                  >
-                    Aposentar
-                  </Button>
-                )}
-              </div>
-            )}
+            actionArea={(credit) =>
+              credit.status === "sold" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDialogState({ creditId: credit.id, type: "retire" })}
+                >
+                  Aposentar
+                </Button>
+              ) : null
+            }
             showSeller
           />
 
-          <Card className="shadow-card border-border/60">
+          <Card className="border-border/60 shadow-card">
             <CardHeader>
               <CardTitle className="font-display">Últimas transações</CardTitle>
             </CardHeader>
@@ -696,7 +847,7 @@ function CreditosPage() {
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {ptDateTime(transaction.created_at)}
-                        {transaction.price_brl !== null ? ` - ${brl(transaction.price_brl)}` : ""}
+                        {transaction.price_brl !== null ? ` · ${brl(transaction.price_brl)}` : ""}
                       </div>
                       {transaction.notes && (
                         <div className="mt-1 text-xs text-muted-foreground">{transaction.notes}</div>
@@ -735,7 +886,7 @@ function CreditosPage() {
               <div className="rounded-xl border border-border/60 p-4">
                 <div className="font-medium">{activeCredit.consortiumName ?? "Consórcio"}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  Token {tokenFragment(activeCredit.token_code)} -{" "}
+                  Token {tokenFragment(activeCredit.token_code)} ·{" "}
                   {formatTco2(activeCredit.credit_amount_tco2)} tCO2
                 </div>
                 {activeCredit.price_brl !== null && (
@@ -745,7 +896,7 @@ function CreditosPage() {
                 )}
               </div>
 
-              {dialogState?.type === "list" && (
+              {dialogState.type === "list" && (
                 <div className="space-y-2">
                   <Label>Preço sugerido (R$)</Label>
                   <Input
@@ -754,7 +905,7 @@ function CreditosPage() {
                     step="0.01"
                     value={priceDraft}
                     onChange={(event) => setPriceDraft(event.target.value)}
-                    placeholder="Ex.: 150.00"
+                    placeholder="Ex.: 150,00"
                   />
                 </div>
               )}
@@ -772,11 +923,7 @@ function CreditosPage() {
           )}
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDialogState(null)}
-              disabled={acting}
-            >
+            <Button variant="outline" onClick={() => setDialogState(null)} disabled={acting}>
               Fechar
             </Button>
             <Button onClick={() => void submitAction()} disabled={acting} className="bg-gradient-forest">
@@ -790,7 +937,15 @@ function CreditosPage() {
   );
 }
 
-function MetricPreview({ hint, title, value }: { hint: string; title: string; value: string }) {
+function MetricPreview({
+  hint,
+  title,
+  value,
+}: {
+  hint: string;
+  title: string;
+  value: string;
+}) {
   return (
     <div className="rounded-xl border border-border/60 p-4">
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{title}</div>
@@ -803,18 +958,20 @@ function MetricPreview({ hint, title, value }: { hint: string; title: string; va
 function CreditsList({
   actionArea,
   credits,
+  creditRecords,
   emptyDescription,
   emptyTitle,
   showSeller = false,
 }: {
-  actionArea: (credit: CreditWithMeta) => React.ReactNode;
+  actionArea: (credit: CreditWithMeta) => ReactNode;
   credits: CreditWithMeta[];
+  creditRecords: Map<string, BlockchainRecord>;
   emptyDescription: string;
   emptyTitle: string;
   showSeller?: boolean;
 }) {
   return (
-    <Card className="shadow-card border-border/60">
+    <Card className="border-border/60 shadow-card">
       <CardContent className="p-0">
         {credits.length === 0 ? (
           <div className="p-6">
@@ -826,51 +983,63 @@ function CreditsList({
           </div>
         ) : (
           <ul className="divide-y divide-border/60">
-            {credits.map((credit) => (
-              <li key={credit.id} className="p-4">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="font-medium">
-                        {credit.consortiumName ?? "Consórcio sem nome"}
+            {credits.map((credit) => {
+              const blockchainRecord = creditRecords.get(credit.id);
+              return (
+                <li key={credit.id} className="p-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-medium">
+                          {credit.consortiumName ?? "Consórcio sem nome"}
+                        </div>
+                        <Badge variant="outline">{creditStatusLabel(credit.status)}</Badge>
+                        <Badge variant="outline">{formatTco2(credit.credit_amount_tco2)} tCO2</Badge>
                       </div>
-                      <Badge variant="outline">{creditStatusLabel(credit.status)}</Badge>
-                      <Badge variant="outline">{formatTco2(credit.credit_amount_tco2)} tCO2</Badge>
-                    </div>
 
-                    <div className="text-xs text-muted-foreground">
-                      Token {credit.token_code} - emitido em {ptDateTime(credit.issued_at)}
-                    </div>
-
-                    {showSeller && credit.sellerName && (
                       <div className="text-xs text-muted-foreground">
-                        Emissor: {credit.sellerName}
+                        Token {credit.token_code} · emitido em {ptDateTime(credit.issued_at)}
                       </div>
-                    )}
 
-                    {credit.buyerName && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <BlockchainBadge record={blockchainRecord} />
+                        {blockchainRecord?.external_hash && (
+                          <span className="text-xs text-muted-foreground">
+                            Hash: {shortHash(blockchainRecord.external_hash)}
+                          </span>
+                        )}
+                      </div>
+
+                      {showSeller && credit.sellerName && (
+                        <div className="text-xs text-muted-foreground">
+                          Emissor: {credit.sellerName}
+                        </div>
+                      )}
+
+                      {credit.buyerName && (
+                        <div className="text-xs text-muted-foreground">
+                          Comprador: {credit.buyerName}
+                        </div>
+                      )}
+
                       <div className="text-xs text-muted-foreground">
-                        Comprador: {credit.buyerName}
+                        Lastro estimado: {credit.estimated_co2_kg_year} kg/ano
                       </div>
-                    )}
 
-                    <div className="text-xs text-muted-foreground">
-                      Lastro estimado: {credit.estimated_co2_kg_year} kg/ano
+                      {credit.price_brl !== null && (
+                        <div className="text-sm font-medium">{brl(credit.price_brl)}</div>
+                      )}
+
+                      {credit.notes && (
+                        <div className="text-xs text-muted-foreground">{credit.notes}</div>
+                      )}
                     </div>
 
-                    {credit.price_brl !== null && (
-                      <div className="text-sm font-medium">{brl(credit.price_brl)}</div>
-                    )}
-
-                    {credit.notes && (
-                      <div className="text-xs text-muted-foreground">{credit.notes}</div>
-                    )}
+                    <div className="flex flex-wrap gap-2">{actionArea(credit)}</div>
                   </div>
-
-                  <div className="flex flex-wrap gap-2">{actionArea(credit)}</div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </CardContent>

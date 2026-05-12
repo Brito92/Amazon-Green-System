@@ -2,16 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AuthGuard } from "@/components/AuthGuard";
 import { AppShell } from "@/components/AppShell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { brl, greet, ptDate } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { brl, greet, ptDate } from "@/lib/format";
 import {
   ArrowRight,
+  Blocks,
   Coins,
   Droplets,
   Leaf,
@@ -33,6 +34,8 @@ export const Route = createFileRoute("/dashboard")({
 
 type EnvironmentSummary = Database["public"]["Views"]["user_environment_dashboard"]["Row"];
 type CarbonSummary = Database["public"]["Views"]["user_carbon_credit_summary"]["Row"];
+type BlockchainSummary = Database["public"]["Views"]["user_blockchain_summary"]["Row"];
+
 type Recent = {
   id: string;
   type: "muda" | "consorcio";
@@ -40,7 +43,12 @@ type Recent = {
   status: string;
   created_at: string;
 };
-type Rank = { user_id: string; display_name: string; total: number };
+
+type Rank = {
+  user_id: string;
+  display_name: string;
+  total: number;
+};
 
 function formatNumber(value: number | null | undefined, digits = 0) {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: digits }).format(value ?? 0);
@@ -62,6 +70,7 @@ function Dashboard() {
   const [cartCount, setCartCount] = useState(0);
   const [environment, setEnvironment] = useState<EnvironmentSummary | null>(null);
   const [carbonSummary, setCarbonSummary] = useState<CarbonSummary | null>(null);
+  const [blockchainSummary, setBlockchainSummary] = useState<BlockchainSummary | null>(null);
   const [recent, setRecent] = useState<Recent[]>([]);
   const [ranking, setRanking] = useState<Rank[]>([]);
 
@@ -79,8 +88,9 @@ function Dashboard() {
         consortiaRes,
         plantingsRes,
         cartRes,
-        envRes,
+        environmentRes,
         carbonRes,
+        blockchainRes,
         recentPlantingsRes,
         recentConsortiaRes,
         rankingRes,
@@ -96,11 +106,8 @@ function Dashboard() {
           .order("reference_month", { ascending: false })
           .limit(1)
           .maybeSingle(),
-        supabase
-          .from("user_carbon_credit_summary")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle(),
+        supabase.from("user_carbon_credit_summary").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("user_blockchain_summary").select("*").eq("user_id", user.id).maybeSingle(),
         supabase
           .from("plantings")
           .select("id, status, created_at, species:species_id(common_name)")
@@ -125,8 +132,9 @@ function Dashboard() {
       setConsortiaCount(consortiaRes.count ?? 0);
       setPlantingsCount(plantingsRes.count ?? 0);
       setCartCount(cartRes.count ?? 0);
-      setEnvironment(envRes.data ?? null);
+      setEnvironment(environmentRes.data ?? null);
       setCarbonSummary(carbonRes.data ?? null);
+      setBlockchainSummary(blockchainRes.data ?? null);
 
       const recentItems: Recent[] = [
         ...((recentPlantingsRes.data ?? []).map((item) => ({
@@ -146,6 +154,7 @@ function Dashboard() {
       ]
         .sort((left, right) => right.created_at.localeCompare(left.created_at))
         .slice(0, 6);
+
       setRecent(recentItems);
 
       const rankingMap = new Map<string, number>();
@@ -158,25 +167,28 @@ function Dashboard() {
         .sort((left, right) => right[1] - left[1])
         .slice(0, 5);
 
-      if (top.length) {
-        const ids = top.map(([id]) => id);
-        const profilesRes = await supabase
-          .from("profiles")
-          .select("user_id, display_name")
-          .in("user_id", ids);
-        const nameMap = new Map(
-          (profilesRes.data ?? []).map((profile) => [profile.user_id, profile.display_name]),
-        );
-        setRanking(
-          top.map(([id, total]) => ({
-            user_id: id,
-            display_name: nameMap.get(id) ?? "Produtor(a)",
-            total,
-          })),
-        );
-      } else {
+      if (!top.length) {
         setRanking([]);
+        return;
       }
+
+      const ids = top.map(([id]) => id);
+      const rankingProfilesRes = await supabase
+        .from("profiles")
+        .select("user_id, display_name")
+        .in("user_id", ids);
+
+      const nameMap = new Map(
+        (rankingProfilesRes.data ?? []).map((profile) => [profile.user_id, profile.display_name]),
+      );
+
+      setRanking(
+        top.map(([id, total]) => ({
+          user_id: id,
+          display_name: nameMap.get(id) ?? "Produtor(a)",
+          total,
+        })),
+      );
     })();
   }, [user]);
 
@@ -212,10 +224,12 @@ function Dashboard() {
       icon: Coins,
     },
     {
-      label: "Receita simulada",
-      value: brl(carbonSummary?.revenue_brl ?? 0),
-      hint: `${formatNumber(carbonSummary?.sold_credits)} créditos vendidos`,
-      icon: ShoppingBag,
+      label: "Eventos blockchain",
+      value: formatNumber(blockchainSummary?.total_eventos),
+      hint: `${formatNumber(blockchainSummary?.minerados)} minerados · ${formatNumber(
+        blockchainSummary?.auditados_validos,
+      )} auditados`,
+      icon: Blocks,
     },
     {
       label: "Pontos confirmados",
@@ -240,7 +254,7 @@ function Dashboard() {
             {name || "Produtor(a)"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Veja seus consórcios, carbono estimado, créditos e uso de água.
+            Veja seus consórcios, créditos, carbono estimado e eventos blockchain.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -258,7 +272,7 @@ function Dashboard() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map(({ hint, icon: Icon, label, value }) => (
-          <Card key={label} className="shadow-card border-border/60">
+          <Card key={label} className="border-border/60 shadow-card">
             <CardContent className="flex items-center gap-4 p-5">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-primary">
                 <Icon className="h-5 w-5" />
@@ -274,7 +288,7 @@ function Dashboard() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">
-        <Card className="shadow-card border-border/60 lg:col-span-2">
+        <Card className="border-border/60 shadow-card lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-display">Registros recentes</CardTitle>
             <Button asChild variant="ghost" size="sm">
@@ -296,14 +310,11 @@ function Dashboard() {
             ) : (
               <ul className="divide-y divide-border/60">
                 {recent.map((item) => (
-                  <li
-                    key={`${item.type}-${item.id}`}
-                    className="flex items-center justify-between py-3"
-                  >
+                  <li key={`${item.type}-${item.id}`} className="flex items-center justify-between py-3">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{item.label}</div>
                       <div className="text-xs text-muted-foreground">
-                        {item.type} - {ptDate(item.created_at)}
+                        {item.type} · {ptDate(item.created_at)}
                       </div>
                     </div>
                     <StatusBadge status={item.status} />
@@ -314,7 +325,7 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card border-border/60">
+        <Card className="border-border/60 shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display">
               <Trophy className="h-5 w-5 text-sun" />

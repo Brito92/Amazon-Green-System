@@ -39,6 +39,147 @@ export type Database = {
   }
   public: {
     Tables: {
+      blockchain_audits: {
+        Row: {
+          audit_status: string
+          created_at: string
+          id: string
+          raw_response: Json | null
+          user_id: string | null
+          validated_at: string
+        }
+        Insert: {
+          audit_status: string
+          created_at?: string
+          id?: string
+          raw_response?: Json | null
+          user_id?: string | null
+          validated_at?: string
+        }
+        Update: {
+          audit_status?: string
+          created_at?: string
+          id?: string
+          raw_response?: Json | null
+          user_id?: string | null
+          validated_at?: string
+        }
+        Relationships: []
+      }
+      blockchain_blocks: {
+        Row: {
+          block_hash: string
+          block_index: number
+          created_at: string
+          difficulty: number | null
+          external_status: string | null
+          id: string
+          merkle_root: string | null
+          mined_at: string | null
+          nonce: number | null
+          previous_hash: string | null
+          raw_response: Json | null
+          total_transactions: number | null
+        }
+        Insert: {
+          block_hash: string
+          block_index: number
+          created_at?: string
+          difficulty?: number | null
+          external_status?: string | null
+          id?: string
+          merkle_root?: string | null
+          mined_at?: string | null
+          nonce?: number | null
+          previous_hash?: string | null
+          raw_response?: Json | null
+          total_transactions?: number | null
+        }
+        Update: {
+          block_hash?: string
+          block_index?: number
+          created_at?: string
+          difficulty?: number | null
+          external_status?: string | null
+          id?: string
+          merkle_root?: string | null
+          mined_at?: string | null
+          nonce?: number | null
+          previous_hash?: string | null
+          raw_response?: Json | null
+          total_transactions?: number | null
+        }
+        Relationships: []
+      }
+      blockchain_records: {
+        Row: {
+          api_response: Json | null
+          audit_status: string | null
+          block_hash: string | null
+          block_index: number | null
+          created_at: string
+          error_message: string | null
+          event_type: string
+          external_hash: string | null
+          external_status: string | null
+          external_transaction_id: string | null
+          id: string
+          is_audited: boolean
+          merkle_root: string | null
+          mined_at: string | null
+          nonce: number | null
+          request_payload: Json
+          target_id: string
+          target_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_response?: Json | null
+          audit_status?: string | null
+          block_hash?: string | null
+          block_index?: number | null
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          external_hash?: string | null
+          external_status?: string | null
+          external_transaction_id?: string | null
+          id?: string
+          is_audited?: boolean
+          merkle_root?: string | null
+          mined_at?: string | null
+          nonce?: number | null
+          request_payload: Json
+          target_id: string
+          target_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_response?: Json | null
+          audit_status?: string | null
+          block_hash?: string | null
+          block_index?: number | null
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          external_hash?: string | null
+          external_status?: string | null
+          external_transaction_id?: string | null
+          id?: string
+          is_audited?: boolean
+          merkle_root?: string | null
+          mined_at?: string | null
+          nonce?: number | null
+          request_payload?: Json
+          target_id?: string
+          target_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       carbon_credit_credits: {
         Row: {
           blockchain_reference: string
@@ -1160,6 +1301,69 @@ export type Database = {
       }
     }
     Views: {
+      blockchain_records_display: {
+        Row: {
+          audit_status: string | null
+          block_hash: string | null
+          block_index: number | null
+          created_at: string | null
+          error_message: string | null
+          event_type: string | null
+          external_hash: string | null
+          external_status: string | null
+          external_transaction_id: string | null
+          id: string | null
+          is_audited: boolean | null
+          merkle_root: string | null
+          mined_at: string | null
+          nonce: number | null
+          target_id: string | null
+          target_type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          audit_status?: string | null
+          block_hash?: string | null
+          block_index?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          external_hash?: string | null
+          external_status?: string | null
+          external_transaction_id?: string | null
+          id?: string | null
+          is_audited?: boolean | null
+          merkle_root?: string | null
+          mined_at?: string | null
+          nonce?: number | null
+          target_id?: string | null
+          target_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          audit_status?: string | null
+          block_hash?: string | null
+          block_index?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          external_hash?: string | null
+          external_status?: string | null
+          external_transaction_id?: string | null
+          id?: string | null
+          is_audited?: boolean | null
+          merkle_root?: string | null
+          mined_at?: string | null
+          nonce?: number | null
+          target_id?: string | null
+          target_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       consortia_co2_summary: {
         Row: {
           consortium_id: string | null
@@ -1375,6 +1579,16 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_blockchain_summary: {
+        Row: {
+          auditados_validos: number | null
+          minerados: number | null
+          pendentes: number | null
+          total_eventos: number | null
+          user_id: string | null
+        }
+        Relationships: []
       }
       user_carbon_credit_summary: {
         Row: {
