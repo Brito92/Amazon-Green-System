@@ -22,7 +22,7 @@ export class LandingPage {
   async expectDownloadLink() {
     await expect(this.page.getByRole("link", { name: /baixar apk/i }).first()).toHaveAttribute(
       "href",
-      "/apk/amazon-green-system.apk",
+      "/apk/app-debug.apk",
     );
   }
 

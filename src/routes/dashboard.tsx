@@ -263,7 +263,7 @@ function Dashboard() {
           </Button>
           <Button asChild className="bg-gradient-forest">
             <Link to="/refloreste">
-              Refloreste e ganhe pontos
+              Plante e ganhe pontos
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
