@@ -29,4 +29,13 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },
+
+   webServer: baseURL.startsWith('http://127.0.0.1') || baseURL.startsWith('http://localhost')
+    ? {
+        command: `npm run dev -- --host 127.0.0.1 --port ${port} --strictPort`,
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120000,
+      }
+    : undefined,
 });

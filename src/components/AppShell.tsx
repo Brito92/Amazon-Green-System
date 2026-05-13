@@ -4,6 +4,7 @@ import {
   Coins,
   Home,
   LogOut,
+  Map,
   Menu,
   MessageCircle,
   ShieldCheck,
@@ -21,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
   { to: "/refloreste", label: "Refloreste e Ganhe", icon: Sprout },
+  { to: "/mapa", label: "Mapa", icon: Map },
   { to: "/produtores", label: "Produtores", icon: Users },
   { to: "/creditos", label: "Créditos", icon: Coins },
   { to: "/validacao", label: "Validação", icon: ShieldCheck },
