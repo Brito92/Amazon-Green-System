@@ -17,6 +17,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { uploadMedia } from "@/lib/upload";
 import { methodLabel, ptDate } from "@/lib/format";
+import {
+  parseOptionalLatitude,
+  parseOptionalLongitude,
+  parsePositiveDecimal,
+} from "@/lib/security-validation";
 import { Droplets, Info, Leaf, Loader2, MapPin, Plus, Sprout, TreePine, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -400,6 +405,14 @@ function InlineSpeciesCreator({
 
   const submit = async () => {
     if (!user || !draft.commonName.trim() || !draft.categoryId || disabled) return;
+    let parsedWaterLiters: number;
+    try {
+      parsedWaterLiters = parsePositiveDecimal(waterLiters, "Litros utilizados");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Valor de Ã¡gua invÃ¡lido.");
+      return;
+    }
+
     setBusy(true);
 
     const { data, error } = await supabase
@@ -505,6 +518,8 @@ function NewPlantingCard({
     setBusy(true);
 
     try {
+      const parsedLatitude = parseOptionalLatitude(latitude);
+      const parsedLongitude = parseOptionalLongitude(longitude);
       let photoUrl: string | null = null;
       if (file) photoUrl = await uploadMedia(file, user.id, "plantings");
 
@@ -514,8 +529,8 @@ function NewPlantingCard({
         consortium_id: consortiumId === "none" ? null : consortiumId,
         planted_at: date,
         location_label: locationLabel || null,
-        latitude: latitude ? Number(latitude) : null,
-        longitude: longitude ? Number(longitude) : null,
+        latitude: parsedLatitude,
+        longitude: parsedLongitude,
         notes: notes || null,
         verification_method: method,
         photo_url: photoUrl,
@@ -761,6 +776,8 @@ function NewConsortiumCard({
     setBusy(true);
 
     try {
+      const parsedLatitude = parseOptionalLatitude(latitude);
+      const parsedLongitude = parseOptionalLongitude(longitude);
       let photoUrl: string | null = null;
       if (file) photoUrl = await uploadMedia(file, user.id, "consortia");
 
@@ -775,8 +792,8 @@ function NewConsortiumCard({
           name: name.trim(),
           description: description || null,
           location_label: locationLabel || null,
-          latitude: latitude ? Number(latitude) : null,
-          longitude: longitude ? Number(longitude) : null,
+          latitude: parsedLatitude,
+          longitude: parsedLongitude,
           photo_url: photoUrl,
           species_list: [...new Set(fallbackSpeciesList)],
           verification_method: method,
@@ -1052,7 +1069,7 @@ function WaterLogCard({
       user_id: user.id,
       consortium_id: consortiumId,
       recorded_at: recordedAt,
-      water_liters: Number(waterLiters),
+      water_liters: parsedWaterLiters,
       irrigation_method: irrigationMethod || null,
       source_type: sourceType || null,
       notes: notes || null,

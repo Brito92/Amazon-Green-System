@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { parseOptionalLatitude, parseOptionalLongitude } from "@/lib/security-validation";
 import { Loader2, MapPin, Save } from "lucide-react";
 import { toast } from "sonner";
 
@@ -88,6 +89,16 @@ function PerfilPage() {
     event.preventDefault();
     if (!user) return;
 
+    let parsedLatitude: number | null;
+    let parsedLongitude: number | null;
+    try {
+      parsedLatitude = parseOptionalLatitude(latitude);
+      parsedLongitude = parseOptionalLongitude(longitude);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Coordenadas inválidas.");
+      return;
+    }
+
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
@@ -96,8 +107,8 @@ function PerfilPage() {
         city: city.trim() || null,
         state: state.trim() || null,
         producer_location_label: locationLabel.trim() || null,
-        producer_latitude: latitude ? Number(latitude) : null,
-        producer_longitude: longitude ? Number(longitude) : null,
+        producer_latitude: parsedLatitude,
+        producer_longitude: parsedLongitude,
       })
       .eq("user_id", user.id);
 
