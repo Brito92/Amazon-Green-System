@@ -1,21 +1,24 @@
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function jsonResponse(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    },
-  });
-}
+import {
+  getCorsHeaders,
+  jsonResponse,
+  validateCorsOrigin,
+} from "../_shared.ts";
 
 Deno.serve(async (req) => {
+  const requestOrigin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(requestOrigin);
+
+  // Validate CORS origin
+  if (!validateCorsOrigin(requestOrigin)) {
+    return jsonResponse(
+      { error: "Origin não autorizada." },
+      403,
+      corsHeaders,
+    );
+  }
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -23,7 +26,11 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonResponse({ error: "Authorization ausente." }, 401);
+      return jsonResponse(
+        { error: "Authorization ausente." },
+        401,
+        corsHeaders,
+      );
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -42,7 +49,11 @@ Deno.serve(async (req) => {
     } = await supabaseUserClient.auth.getUser();
 
     if (userError || !user) {
-      return jsonResponse({ error: "Usuário não autenticado." }, 401);
+      return jsonResponse(
+        { error: "Usuário não autenticado." },
+        401,
+        corsHeaders,
+      );
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
@@ -54,7 +65,11 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!profile || !["admin", "moderator"].includes(profile.role)) {
-      return jsonResponse({ error: "Sem permissão para minerar." }, 403);
+      return jsonResponse(
+        { error: "Sem permissão para minerar." },
+        403,
+        corsHeaders,
+      );
     }
 
     const apiResponse = await fetch(`${blockchainApiBaseUrl}/minerar.php`, {
@@ -71,8 +86,12 @@ Deno.serve(async (req) => {
 
     if (!apiJson?.sucesso || !block) {
       return jsonResponse(
-        { error: apiJson?.mensagem ?? "Falha ao minerar bloco.", blockchain: apiJson },
+        {
+          error: apiJson?.mensagem ?? "Falha ao minerar bloco.",
+          blockchain: apiJson,
+        },
         500,
+        corsHeaders,
       );
     }
 
@@ -92,7 +111,11 @@ Deno.serve(async (req) => {
     });
 
     if (blockInsertError) {
-      return jsonResponse({ error: blockInsertError.message }, 500);
+      return jsonResponse(
+        { error: blockInsertError.message },
+        500,
+        corsHeaders,
+      );
     }
 
     await supabaseAdmin
@@ -107,15 +130,20 @@ Deno.serve(async (req) => {
       })
       .eq("external_status", "pendente");
 
-    return jsonResponse({
-      success: true,
-      message: "Bloco minerado com sucesso.",
-      blockchain: apiJson,
-    });
+    return jsonResponse(
+      {
+        success: true,
+        message: "Bloco minerado com sucesso.",
+        blockchain: apiJson,
+      },
+      200,
+      corsHeaders,
+    );
   } catch (error) {
     return jsonResponse(
       { error: error instanceof Error ? error.message : "Erro inesperado." },
       500,
+      corsHeaders,
     );
   }
 });

@@ -1,30 +1,29 @@
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  getCorsHeaders,
+  jsonResponse,
+  blockchainEventSchema,
+  parseAndValidateBody,
+  validateCorsOrigin,
+} from "../_shared.ts";
 
 type TargetType = "planting" | "consortium" | "carbon_credit";
 type EventType = "muda_validada" | "consorcio_validado" | "credito_emitido";
 
-type RequestBody = {
-  targetType: TargetType;
-  targetId: string;
-  eventType: EventType;
-};
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function jsonResponse(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    },
-  });
-}
-
 Deno.serve(async (req) => {
+  const requestOrigin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(requestOrigin);
+
+  // Validate CORS origin
+  if (!validateCorsOrigin(requestOrigin)) {
+    return jsonResponse(
+      { error: "Origin não autorizada." },
+      403,
+      corsHeaders,
+    );
+  }
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -32,10 +31,25 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonResponse({ error: "Authorization header ausente." }, 401);
+      return jsonResponse(
+        { error: "Authorization header ausente." },
+        401,
+        corsHeaders,
+      );
     }
 
-    const body = (await req.json()) as RequestBody;
+    const bodyValidation = await parseAndValidateBody(
+      req,
+      blockchainEventSchema,
+    );
+    if (!bodyValidation.success) {
+      return jsonResponse(
+        { error: `Validação falhou: ${bodyValidation.error}` },
+        400,
+        corsHeaders,
+      );
+    }
+    const body = bodyValidation.data;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -53,7 +67,11 @@ Deno.serve(async (req) => {
     } = await supabaseUserClient.auth.getUser();
 
     if (userError || !user) {
-      return jsonResponse({ error: "Usuário não autenticado." }, 401);
+      return jsonResponse(
+        { error: "Usuário não autenticado." },
+        401,
+        corsHeaders,
+      );
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
@@ -74,6 +92,7 @@ Deno.serve(async (req) => {
           existingId: existingRes.data.id,
         },
         409,
+        corsHeaders,
       );
     }
 
@@ -121,6 +140,7 @@ Deno.serve(async (req) => {
           blockchain_response: apiJson,
         },
         500,
+        corsHeaders,
       );
     }
 
@@ -132,11 +152,13 @@ Deno.serve(async (req) => {
         blockchain: apiJson,
       },
       200,
+      corsHeaders,
     );
   } catch (error) {
     return jsonResponse(
       { error: error instanceof Error ? error.message : "Erro inesperado." },
       500,
+      corsHeaders,
     );
   }
 });
