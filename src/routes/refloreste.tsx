@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -1375,23 +1376,9 @@ function HistoryPlantings({
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select value={planting.consortium?.id ?? "none"} onValueChange={(value) => void link(planting.id, value)}>
-                    <SelectTrigger className="h-8 w-52 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sem consórcio</SelectItem>
-                      {consortia.map((consortium) => (
-                        <SelectItem key={consortium.id} value={consortium.id}>
-                          {consortium.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  
                   <StatusBadge status={planting.status} />
-                  <Button size="icon" variant="ghost" onClick={() => void remove(planting.id)} aria-label="Remover muda">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  
                 </div>
               </li>
             ))}

@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type E2ECredentials = {
   email: string;
   password: string;

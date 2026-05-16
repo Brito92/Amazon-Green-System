@@ -43,8 +43,6 @@ select
   p.state,
   p.points,
   p.producer_location_label,
-  p.producer_latitude,
-  p.producer_longitude,
   coalesce(vc.consortia_count, 0) as consortia_count,
   coalesce(vc.total_seedlings, 0) as total_seedlings,
   coalesce(vp.verified_plantings_count, 0) as verified_plantings_count,

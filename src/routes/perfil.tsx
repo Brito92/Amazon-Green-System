@@ -107,8 +107,6 @@ function PerfilPage() {
         city: city.trim() || null,
         state: state.trim() || null,
         producer_location_label: locationLabel.trim() || null,
-        producer_latitude: parsedLatitude,
-        producer_longitude: parsedLongitude,
       })
       .eq("user_id", user.id);
 
@@ -130,15 +128,6 @@ function PerfilPage() {
           Atualize seus dados públicos e informe onde suas mudas e consórcios estão localizados.
         </p>
       </header>
-
-      <Alert className="border-primary/20 bg-secondary/40">
-        <MapPin className="h-4 w-4" />
-        <AlertTitle>Localização simples e funcional</AlertTitle>
-        <AlertDescription>
-          Nesta versão, você pode informar cidade, estado, uma descrição do local de plantio e,
-          se quiser, capturar latitude e longitude atuais pelo navegador.
-        </AlertDescription>
-      </Alert>
 
       <Card className="shadow-card border-border/60">
         <CardHeader>
@@ -177,28 +166,9 @@ function PerfilPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Latitude</Label>
-                <Input value={latitude} onChange={(event) => setLatitude(event.target.value)} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Longitude</Label>
-                <Input value={longitude} onChange={(event) => setLongitude(event.target.value)} />
-              </div>
 
               <div className="sm:col-span-2 flex flex-wrap gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void captureLocation()}
-                  disabled={capturing}
-                >
-                  {capturing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Usar minha localização atual
-                </Button>
-
-                <Button type="submit" disabled={saving} className="bg-gradient-forest">
+                  <Button type="submit" disabled={saving} className="bg-gradient-forest">
                   {saving ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (

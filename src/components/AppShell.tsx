@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Sprout,
   Store,
+  UserCircle2,
   Users,
   X,
 } from "lucide-react";
@@ -115,10 +116,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-forest text-xs font-semibold text-primary-foreground">
                   {initials}
                 </div>
-                <div className="min-w-0 flex-1">
+                <Link to="/perfil" className="min-w-0 flex-1 rounded-md transition hover:opacity-80">
                   <div className="truncate text-sm font-medium">{name || user?.email}</div>
                   <div className="text-xs text-muted-foreground">{points} pts confirmados</div>
-                </div>
+                </Link>
               </div>
               <Button
                 variant="ghost"

@@ -12,6 +12,11 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { brl, ptDate } from "@/lib/format";
+import {
+  parseOptionalLatitude,
+  parseOptionalLongitude,
+  parsePositiveDecimal,
+} from "@/lib/security-validation";
 import { Coins, Droplets, Leaf, MapPin, Search, Sprout, TreePine, UserRound } from "lucide-react";
 
 export const Route = createFileRoute("/produtores")({
